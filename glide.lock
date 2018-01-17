@@ -1,0 +1,6 @@
+hash: 9df056f85850a2b4f10bd13b764aeb247aed382265f9e5791549a9afee5f0198
+updated: 2018-01-17T16:17:22.477538986+01:00
+imports:
+- name: github.com/dgrijalva/jwt-go
+  version: dbeaa9332f19a944acb5736b4456cfcc02140e29
+testImports: []

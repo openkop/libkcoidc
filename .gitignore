@@ -1,0 +1,5 @@
+/vendor
+/.libs
+/.gopath
+/golint.txt
+/govet.txt
