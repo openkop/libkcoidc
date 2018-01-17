@@ -10,14 +10,15 @@ GOLINT  ?= golint
 
 GO2XUNIT ?= go2xunit
 
-CC     ?= gcc
-CFLAGS ?= -I./.libs
+CC ?= gcc
 
 # Cgo
 CGO_ENABLED := 1
 
 # Variables
 PWD     := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+TARGET  ?= ./.libs
+CFLAGS  ?= -I$(TARGET)
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2>/dev/null | sed 's/^v//' || \
 			cat $(CURDIR)/.version 2> /dev/null || echo 0.0.0-unreleased)
@@ -26,19 +27,16 @@ BASE     = $(GOPATH)/src/$(PACKAGE)
 PKGS     = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
 TESTPKGS = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS) 2>/dev/null)
 CMDS     = $(or $(CMD),$(addprefix lib/,$(notdir $(shell find "$(PWD)/lib/" -type d))))
+DEPS     = $(addprefix $(TARGET)/,$(addsuffix .h,$(notdir $(CMDS))))
+LIBS     = $(addprefix $(TARGET)/,$(addsuffix .so,$(notdir $(CMDS))))
 TIMEOUT  = 30
-
-# C shared libraries
-
-DEPS = .libs/libkcoidc.h
-LIBS = .libs/libkcoidc.so
 
 export GOPATH CGO_ENABLED
 
 # Build
 
 .PHONY: all
-all: fmt lint vendor | $(CMDS)
+all: fmt lint vendor | $(LIBS)
 
 $(BASE): ; $(info creating local GOPATH ...)
 	@mkdir -p $(dir $@)
@@ -52,22 +50,27 @@ $(CMDS): vendor | $(BASE) ; $(info building $@ ...) @
 		-asmflags '-trimpath=$(GOPATH)' \
 		-gcflags '-trimpath=$(GOPATH)' \
 		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external' \
-		-o .libs/$(notdir $@).so $(PACKAGE)/$@
+		-o $(TARGET)/$(notdir $@).so $(PACKAGE)/$@
 
 $(DEPS): $(CMDS)
 
-$(LIBS): $(CMDS)
+$(LIBS): $(DEPS)
 
-.libs/validate: examples/validate.c $(LIBS)
+# Examples
+
+.PHONY: examples
+examples: $(TARGET)/validate
+
+$(TARGET)/validate: examples/validate.c $(LIBS)
 	$(CC) -Wall -std=c11 -o $@ $^ $(CFLAGS)
 
 # Helpers
 
 .PHONY: lint
 lint: vendor | $(BASE) ; $(info running golint ...)	@
-	#@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	#	test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	#done ; exit $$ret
+	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
+		test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
+	done ; exit $$ret
 
 .PHONY: fmt
 fmt: ; $(info running gofmt ...)	@

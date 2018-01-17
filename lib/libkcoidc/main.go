@@ -24,6 +24,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+// ValidateToken validates a raw JWT token string.
 //export ValidateToken
 func ValidateToken(tokenRawString *C.char) (*C.char, bool) {
 	tokenString := C.GoString(tokenRawString)
