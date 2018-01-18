@@ -35,6 +35,7 @@ func (err KCOIDCErr) Error() string {
 const (
 	KCOIDCErrNone              = iota
 	KCOIDCErrUnknown KCOIDCErr = (1 << 8) | iota
+	KCOIDCErrInvalidIss
 	KCOIDCErrAlreadyInitialized
 	KCOIDCErrNotInitialized
 	KCOIDCErrTimeout
@@ -52,6 +53,7 @@ const KCOIDCSuccess = KCOIDCErrNone
 // KCOIDCErrTextMap maps erros to readable names.
 var KCOIDCErrTextMap = map[KCOIDCErr]string{
 	KCOIDCErrUnknown:                      "Unknown",
+	KCOIDCErrInvalidIss:                   "Invalid Issuer Identifier Value",
 	KCOIDCErrAlreadyInitialized:           "Already Initialized",
 	KCOIDCErrNotInitialized:               "Not Initialized",
 	KCOIDCErrTimeout:                      "Timeout",

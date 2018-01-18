@@ -19,9 +19,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -53,12 +56,25 @@ func init() {
 			Timeout: 60 * time.Second,
 		},
 	}
+	// Setup transport defaults.
+	InsecureSkipVerify(false)
 }
 
 // Initialize initializes the global library state with the provided issuer.
 func Initialize(ctx context.Context, iss string) error {
 	if debugEnabled {
 		fmt.Printf("kcoidc initialize: %v\n", iss)
+	}
+
+	issURL, err := url.Parse(iss)
+	if err != nil {
+		if debugEnabled {
+			fmt.Printf("kcoidc initialize failed with invalid iss value: %v\n", err)
+		}
+		return KCOIDCErrInvalidIss
+	}
+	if issURL.Host == "" || issURL.Scheme == "" {
+		return KCOIDCErrInvalidIss
 	}
 
 	initialization.Lock()
@@ -79,7 +95,7 @@ func Initialize(ctx context.Context, iss string) error {
 
 	initialization.Unlock()
 
-	err := <-started
+	err = <-started
 	if err != nil {
 		return err
 	}
@@ -150,6 +166,38 @@ func WaitUntilReady(timeout time.Duration) error {
 	}
 
 	return err
+}
+
+// InsecureSkipVerify sets up the libraries HTTP transport according to the
+// provided parametters.
+func InsecureSkipVerify(insecureSkipVerify bool) error {
+	initialization.Lock()
+	defer initialization.Unlock()
+
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if insecureSkipVerify {
+		// Only set this when we have something to change to allow Go to use
+		// the internal HTTP2 connection logic otherwise.
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		if debugEnabled {
+			fmt.Println("kcoidc TLS verification is now disabled - this is insecure")
+		}
+	}
+
+	initialization.client.Transport = transport
+	return nil
 }
 
 func (in *initializationData) start(ctx context.Context, started chan error) {

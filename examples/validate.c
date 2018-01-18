@@ -25,15 +25,21 @@ int main(int argc, char** argv)
 {
 	int res;
 	int res2;
-	clock_t begin = clock();
+	clock_t begin;
 	clock_t end;
 	double time_spent;
 
 	char* iss_s = argv[1];
 	char* token_s = argv[2];
-	struct kcoidc_validate_token_s_return valid;
+	struct kcoidc_validate_token_s_return token_result;
 
-	// Initialize first.
+	// Allow insecure operations.
+	res = kcoidc_insecure_skip_verify(1);
+	if (res != 0) {
+		printf("> Error: insecure_skip_verify failed: 0x%x\n", res);
+		goto exit;
+	}
+	// Initialize with issuer identifier.
 	res = kcoidc_initialize(iss_s);
 	if (res != 0) {
 		printf("> Error: initialize failed: 0x%x\n", res);
@@ -46,20 +52,21 @@ int main(int argc, char** argv)
 		goto exit;
 	}
 
-	// validate token passed from commandline.
-	valid = kcoidc_validate_token_s(token_s);
+	begin = clock();
+	// Validate token passed from commandline.
+	token_result = kcoidc_validate_token_s(token_s);
 	end = clock();
 	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
 	// Show the result.
-	printf("> Token subject : %s -> %s\n", valid.r0, valid.r1 == 0 ? "valid" : "invalid");
+	printf("> Token subject : %s -> %s\n", token_result.r0, token_result.r1 == 0 ? "valid" : "invalid");
 	printf("> Time spent    : %8fs\n", time_spent);
 
-	// Free the subjects memory.
-	free(valid.r0);
+	// Free the returned subject memory.
+	free(token_result.r0);
 
 	// Handle validation result.
-	res = valid.r1;
+	res = token_result.r1;
 	printf("> Result code   : 0x%x\n", res);
 
 	// Remember to uninitialize on success as well.

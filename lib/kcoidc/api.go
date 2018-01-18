@@ -43,6 +43,15 @@ func kcoidc_wait_untill_ready(timeout C.ulonglong) C.ulonglong {
 	return KCOIDCSuccess
 }
 
+//export kcoidc_insecure_skip_verify
+func kcoidc_insecure_skip_verify(enableInsecure C.int) C.ulonglong {
+	err := InsecureSkipVerify(enableInsecure == 1)
+	if err != nil {
+		return returnKCOIDCErrorOrUnknown(err)
+	}
+	return KCOIDCSuccess
+}
+
 //export kcoidc_validate_token_s
 func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong) {
 	subject, err := ValidateTokenString(C.GoString(tokenCString))
