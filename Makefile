@@ -13,6 +13,7 @@ GO2XUNIT ?= go2xunit
 DST_BIN  ?= ./bin
 DST_LIBS ?= ./.libs
 CC       ?= gcc
+CXX      ?= g++
 CFLAGS   ?= -I$(DST_LIBS)
 
 # Cgo
@@ -67,10 +68,13 @@ $(LIBS): $(DEPS)
 # Examples
 
 .PHONY: examples
-examples: $(DST_BIN)/validate
+examples: $(DST_BIN)/validate $(DST_BIN)/benchmark
 
 $(DST_BIN)/validate: examples/validate.c $(LIBS)
 	$(CC) -Wall -std=c11 -o $@ $^ $(CFLAGS)
+
+$(DST_BIN)/benchmark: examples/benchmark.cpp $(LIBS)
+	$(CXX) -Wall -O3 -std=c++0x -o $@ $^ -pthread $(CFLAGS)
 
 # Helpers
 
