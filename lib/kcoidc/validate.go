@@ -74,7 +74,7 @@ func ValidateTokenString(tokenString string) (string, error) {
 		fmt.Printf("kcoidc validate token result: %v, %#v, %s\n", claims.Subject, token.Valid, err)
 	}
 
-	if token.Valid {
+	if token != nil && token.Valid {
 		return claims.Subject, nil
 	} else if ve, ok := err.(*jwt.ValidationError); ok {
 		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
