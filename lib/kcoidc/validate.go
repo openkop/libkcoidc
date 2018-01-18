@@ -26,19 +26,70 @@ import (
 // ValidateTokenString validates the provided token string value and returns
 // the subject as found in the claims.
 func ValidateTokenString(tokenString string) (string, error) {
-	fmt.Printf("tokenString: %s\n", tokenString)
+	initialization.RLock()
+	ddoc := initialization.discovery
+	jwks := initialization.jwks
+	initialization.RUnlock()
+	if ddoc == nil || jwks == nil {
+		return "", KCOIDCErrNotInitialized
+	}
+
+	if debugEnabled {
+		fmt.Printf("kcoidc validate token string: %s\n", tokenString)
+	}
 
 	claims := &jwt.StandardClaims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		if debugEnabled {
+			fmt.Printf("kcoidc validate token header: %#v\n", token.Header)
 		}
 
-		return []byte("secret"), nil
+		supportedAlg := false
+		for _, alg := range ddoc.SupportedSigningAlgValues {
+			if token.Method.Alg() == alg {
+				supportedAlg = true
+				break
+			}
+		}
+		if !supportedAlg {
+			return nil, KCOIDCErrTokenUnexpectedSigningMethod
+		}
+
+		kid, _ := (token.Header["kid"].(string))
+		keys := jwks.Key(kid)
+		if keys == nil || len(keys) == 0 {
+			return nil, KCOIDCErrTokenUnknownKey
+		}
+
+		key := keys[0]
+		if debugEnabled {
+			fmt.Printf("kcoidc validate token key: %#v\n", key.Key)
+		}
+
+		return key.Key, nil
 	})
 
-	fmt.Printf("token validation result: %#v, %#v, %v\n", token, claims, err)
+	if debugEnabled {
+		fmt.Printf("kcoidc validate token result: %v, %#v, %s\n", claims.Subject, token.Valid, err)
+	}
 
+	if token.Valid {
+		return claims.Subject, nil
+	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+			err = KCOIDCErrTokenMalformed
+		} else if ve.Errors&(jwt.ValidationErrorSignatureInvalid|jwt.ValidationErrorUnverifiable) != 0 {
+			err = KCOIDCErrTokenInvalidSignature
+		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+			err = KCOIDCErrTokenExpiredOrNotValidYet
+		} else {
+			err = KCOIDCErrTokenValidationFailed
+		}
+	}
+
+	if debugEnabled {
+		fmt.Printf("kcoid validate token resulted in validation failure: %s\n", err)
+	}
 	return claims.Subject, err
 }

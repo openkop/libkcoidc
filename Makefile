@@ -1,4 +1,4 @@
-PACKAGE  = stash.kopano.io/kc/libkoidc
+PACKAGE  = stash.kopano.io/kc/libkcoidc
 PACKAGE_NAME = $(shell basename $(PACKAGE))
 
 # Tools

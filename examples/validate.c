@@ -23,19 +23,53 @@
 
 int main(int argc, char** argv)
 {
+	int res;
+	int res2;
 	clock_t begin = clock();
-	char* token_s = argv[1];
-	struct kcoidc_validate_token_s_return res = kcoidc_validate_token_s(token_s);
-	clock_t end = clock();
-	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	clock_t end;
+	double time_spent;
 
-	printf("\n");
-	printf("Token subject : %s -> %s\n", res.r0, res.r1 ? "valid" : "invalid");
-	printf("Time spent    : %8fs\n", time_spent);
+	char* iss_s = argv[1];
+	char* token_s = argv[2];
+	struct kcoidc_validate_token_s_return valid;
 
-	free(res.r0);
+	// Initialize first.
+	res = kcoidc_initialize(iss_s);
+	if (res != 0) {
+		printf("> Error: initialize failed: 0x%x\n", res);
+		goto exit;
+	}
+	// Wait until oidc validation becomes ready.
+	res = kcoidc_wait_untill_ready(10);
+	if (res != 0) {
+		printf("> Error: failed to get ready in time: 0x%x\n", res);
+		goto exit;
+	}
 
-	if (!res.r1) {
+	// validate token passed from commandline.
+	valid = kcoidc_validate_token_s(token_s);
+	end = clock();
+	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+	// Show the result.
+	printf("> Token subject : %s -> %s\n", valid.r0, valid.r1 == 0 ? "valid" : "invalid");
+	printf("> Time spent    : %8fs\n", time_spent);
+
+	// Free the subjects memory.
+	free(valid.r0);
+
+	// Handle validation result.
+	res = valid.r1;
+	printf("> Result code   : 0x%x\n", res);
+
+	// Remember to uninitialize on success as well.
+	res2 = kcoidc_uninitialize();
+	if (res2 != 0) {
+		printf("> Error: failed to uninitialize: 0x%x\n", res2);
+	}
+
+exit:
+	if (res != 0) {
 		return -1;
 	}
 	return 0;

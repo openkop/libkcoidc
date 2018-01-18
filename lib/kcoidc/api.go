@@ -17,15 +17,46 @@
 
 package main
 
+// #define KOIDC_API
+import "C"
+
 import (
-	"C"
+	"context"
+	"time"
 )
 
+//export kcoidc_initialize
+func kcoidc_initialize(issCString *C.char) C.ulonglong {
+	err := Initialize(context.Background(), C.GoString(issCString))
+	if err != nil {
+		return returnKCOIDCErrorOrUnknown(err)
+	}
+	return KCOIDCSuccess
+}
+
+//export kcoidc_wait_untill_ready
+func kcoidc_wait_untill_ready(timeout C.ulonglong) C.ulonglong {
+	err := WaitUntilReady(time.Duration(timeout) * time.Second)
+	if err != nil {
+		return returnKCOIDCErrorOrUnknown(err)
+	}
+	return KCOIDCSuccess
+}
+
 //export kcoidc_validate_token_s
-func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, bool) {
+func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong) {
 	subject, err := ValidateTokenString(C.GoString(tokenCString))
 	if err != nil {
-		return C.CString(subject), false
+		return C.CString(subject), returnKCOIDCErrorOrUnknown(err)
 	}
-	return C.CString(subject), true
+	return C.CString(subject), KCOIDCSuccess
+}
+
+//export kcoidc_uninitialize
+func kcoidc_uninitialize() C.ulonglong {
+	err := Uninitialize()
+	if err != nil {
+		return returnKCOIDCErrorOrUnknown(err)
+	}
+	return KCOIDCSuccess
 }
