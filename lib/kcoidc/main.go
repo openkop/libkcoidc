@@ -19,31 +19,6 @@ package main
 
 import (
 	"C"
-	"fmt"
-
-	"github.com/dgrijalva/jwt-go"
 )
-
-// ValidateToken validates a raw JWT token string.
-//export ValidateToken
-func ValidateToken(tokenRawString *C.char) (*C.char, bool) {
-	tokenString := C.GoString(tokenRawString)
-
-	fmt.Printf("tokenString: %s\n", tokenString)
-
-	claims := &jwt.StandardClaims{}
-
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte("secret"), nil
-	})
-
-	fmt.Printf("token validation result: %#v, %#v, %v\n", token, claims, err)
-
-	return C.CString(claims.Subject), token.Valid
-}
 
 func main() {}

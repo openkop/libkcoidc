@@ -15,28 +15,17 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+package main
 
-#include "kcoidc.h"
+import (
+	"C"
+)
 
-int main(int argc, char** argv)
-{
-	clock_t begin = clock();
-	char* token_s = argv[1];
-	struct kcoidc_validate_token_s_return res = kcoidc_validate_token_s(token_s);
-	clock_t end = clock();
-	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-
-	printf("\n");
-	printf("Token subject : %s -> %s\n", res.r0, res.r1 ? "valid" : "invalid");
-	printf("Time spent    : %8fs\n", time_spent);
-
-	free(res.r0);
-
-	if (!res.r1) {
-		return -1;
+//export kcoidc_validate_token_s
+func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, bool) {
+	subject, err := ValidateTokenString(C.GoString(tokenCString))
+	if err != nil {
+		return C.CString(subject), false
 	}
-	return 0;
+	return C.CString(subject), true
 }

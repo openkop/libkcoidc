@@ -10,15 +10,16 @@ GOLINT  ?= golint
 
 GO2XUNIT ?= go2xunit
 
-CC ?= gcc
+DST_BIN  ?= ./bin
+DST_LIBS ?= ./.libs
+CC       ?= gcc
+CFLAGS   ?= -I$(DST_LIBS)
 
 # Cgo
 CGO_ENABLED := 1
 
 # Variables
 PWD     := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-TARGET  ?= ./.libs
-CFLAGS  ?= -I$(TARGET)
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2>/dev/null | sed 's/^v//' || \
 			cat $(CURDIR)/.version 2> /dev/null || echo 0.0.0-unreleased)
@@ -27,8 +28,8 @@ BASE     = $(GOPATH)/src/$(PACKAGE)
 PKGS     = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
 TESTPKGS = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS) 2>/dev/null)
 CMDS     = $(or $(CMD),$(addprefix lib/,$(notdir $(shell find "$(PWD)/lib/" -type d))))
-DEPS     = $(addprefix $(TARGET)/,$(addsuffix .h,$(notdir $(CMDS))))
-LIBS     = $(addprefix $(TARGET)/,$(addsuffix .so,$(notdir $(CMDS))))
+DEPS     = $(addprefix $(DST_LIBS)/,$(addsuffix .h,$(notdir $(CMDS))))
+LIBS     = $(addprefix $(DST_LIBS)/lib,$(addsuffix .so,$(notdir $(CMDS))))
 TIMEOUT  = 30
 
 export GOPATH CGO_ENABLED
@@ -42,15 +43,22 @@ $(BASE): ; $(info creating local GOPATH ...)
 	@mkdir -p $(dir $@)
 	@ln -sf $(CURDIR) $@
 
+$(DST_BIN):
+	@mkdir $@
+
+$(DST_LIBS):
+	@mkdir $@
+
 .PHONY: $(CMDS)
-$(CMDS): vendor | $(BASE) ; $(info building $@ ...) @
+$(CMDS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building $@ ...) @
 	cd $(BASE) && $(GO) build \
 		-tags release \
 		-buildmode=c-shared \
 		-asmflags '-trimpath=$(GOPATH)' \
 		-gcflags '-trimpath=$(GOPATH)' \
 		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external' \
-		-o $(TARGET)/$(notdir $@).so $(PACKAGE)/$@
+		-o $(DST_LIBS)/$(notdir $@).so $(PACKAGE)/$@
+	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so
 
 $(DEPS): $(CMDS)
 
@@ -59,9 +67,9 @@ $(LIBS): $(DEPS)
 # Examples
 
 .PHONY: examples
-examples: $(TARGET)/validate
+examples: $(DST_BIN)/validate
 
-$(TARGET)/validate: examples/validate.c $(LIBS)
+$(DST_BIN)/validate: examples/validate.c $(LIBS)
 	$(CC) -Wall -std=c11 -o $@ $^ $(CFLAGS)
 
 # Helpers
@@ -137,6 +145,7 @@ dist: ; $(info building dist tarball ...)
 clean: ; $(info cleaning ...)	@
 	@rm -rf $(GOPATH)
 	@rm -rf .libs
+	@rm -rf bin
 	@rm -rf test/test.*
 
 .PHONY: version
