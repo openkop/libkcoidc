@@ -14,3 +14,7 @@ trim_trailing_whitespace = true
 # Go uses indent size of 4
 [*.go]
 indent_size = 4
+
+[*.py]
+indent_size = 4
+indent_style = space

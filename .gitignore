@@ -4,3 +4,4 @@
 /.gopath
 /golint.txt
 /govet.txt
+/python/build
