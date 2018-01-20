@@ -38,7 +38,7 @@ export GOPATH CGO_ENABLED
 # Build
 
 .PHONY: all
-all: fmt lint vendor | $(LIBS)
+all: fmt vendor | $(LIBS)
 
 $(BASE): ; $(info creating local GOPATH ...)
 	@mkdir -p $(dir $@)
