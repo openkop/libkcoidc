@@ -15,9 +15,11 @@
  *
  */
 
+#define _BSD_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 
 #include "kcoidc.h"
 
@@ -25,9 +27,7 @@ int main(int argc, char** argv)
 {
 	int res;
 	int res2;
-	clock_t begin;
-	clock_t end;
-	double time_spent;
+	struct timeval begin, end, time_spent;
 
 	char* iss_s = argv[1];
 	char* token_s = argv[2];
@@ -52,15 +52,15 @@ int main(int argc, char** argv)
 		goto exit;
 	}
 
-	begin = clock();
+	gettimeofday(&begin, NULL);
 	// Validate token passed from commandline.
 	token_result = kcoidc_validate_token_s(token_s);
-	end = clock();
-	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	gettimeofday(&end, NULL);
+	timersub(&end, &begin, &time_spent);
 
 	// Show the result.
 	printf("> Token subject : %s -> %s\n", token_result.r0, token_result.r1 == 0 ? "valid" : "invalid");
-	printf("> Time spent    : %8fs\n", time_spent);
+	printf("> Time spent    : %ld.%06lds\n", (long int)time_spent.tv_sec, (long int)time_spent.tv_usec);
 
 	// Free the returned subject memory.
 	free(token_result.r0);

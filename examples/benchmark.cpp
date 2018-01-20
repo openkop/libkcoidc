@@ -15,6 +15,7 @@
  *
  */
 
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -75,11 +76,9 @@ int main(int argc, char** argv)
 	int res;
 
 	if ((res = kcoidc::kcoidc_insecure_skip_verify(1)) != 0) {
-		// Error.
 		return handleError("insecure_skip_verify failed", res);
 	};
 	if ((res = kcoidc::kcoidc_initialize(&iss_s[0u])) != 0) {
-		// Error.
 		return handleError("initialize failed", res);
 	};
 	if ((res = kcoidc::kcoidc_wait_untill_ready(10)) != 0) {
@@ -89,21 +88,22 @@ int main(int argc, char** argv)
 	int concurentThreadsSupported = std::thread::hardware_concurrency();
 	int count = 100000;
 	std::cout << "> Info : using " << concurentThreadsSupported << " threads with " << count << " runs per thread" << std::endl;
-	const clock_t begin_time = clock();
+	auto  begin_time = std::chrono::system_clock::now();
 	for (auto i = 1; i <= concurentThreadsSupported; ++i) {
 		threads.push_back(std::thread(bench_validateTokenS, i, count, token_s));
 	}
 	for (auto& th : threads) {
 		th.join();
 	}
-	const clock_t end_time = clock();
-	const double duration = float(end_time - begin_time) / CLOCKS_PER_SEC;
-	const double rate = (count * concurentThreadsSupported) / duration;
-	std::cout << "> Time : " << duration << "s" << std::endl;
+	auto end_time = std::chrono::system_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+		end_time - begin_time
+	);
+	auto rate = (count * concurentThreadsSupported) / (float(duration.count())/1000);
+	std::cout << "> Time : " << float(duration.count())/1000 << "s" << std::endl;
 	std::cout << "> Rate : " << rate << " op/s" << std::endl;
 
 	if ((res = kcoidc::kcoidc_uninitialize()) != 0) {
-		// Error.
 		return handleError("failed to uninitialize", res);
 	};
 

@@ -54,26 +54,26 @@ Similarly there is also a simple benchmark.
 ```
 make examples && KCOIDC_DEBUG= bin/benchmark 'https://mose4:8443' "$TOKEN_VALUE" && echo 'yay' || echo 'nay'
 > Info : using 8 threads with 100000 runs per thread
-> Info : thread 1 started ...
 > Info : thread 2 started ...
 > Info : thread 3 started ...
 > Info : thread 5 started ...
+> Info : thread 1 started ...
 > Info : thread 4 started ...
-> Info : thread 7 started ...
 > Info : thread 6 started ...
+> Info : thread 7 started ...
 > Info : thread 8 started ...
+> Info : thread 1 done:100000 failed:0
 > Info : thread 2 done:100000 failed:0
-> Info : thread 6 done:100000 failed:0
-> Info : thread 8 done:100000 failed:0
+> Info : thread 4 done:100000 failed:0
 > Info : thread 3 done:100000 failed:0
 > Info : thread 7 done:100000 failed:0
-> Info : thread 4 done:100000 failed:0
-> Info : thread 1 done:100000 failed:0
+> Info : thread 6 done:100000 failed:0
+> Info : thread 8 done:100000 failed:0
 > Info : thread 5 done:100000 failed:0
-> Time : 113.067s
-> Rate : 7075.46 op/s
+> Time : 15.775s
+> Rate : 50713.2 op/s
 yay
 ```
 
 So on my machine (Intel(R) Core(TM) i7-3930K CPU @ 3.20GHz), this gives around
-7050 validations per second with 8 parallel threads.
+51000 validations per second with 8 parallel threads.
