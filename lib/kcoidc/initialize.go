@@ -208,7 +208,7 @@ func (in *initializationData) start(ctx context.Context, started chan error) {
 		}()
 	}
 
-	// Close started channel to signal caller that we are started.
+	// Use tarted channel to signal caller that we are done.
 	in.Lock()
 	if !in.initialized || started != in.started {
 		in.Unlock()
@@ -216,6 +216,8 @@ func (in *initializationData) start(ctx context.Context, started chan error) {
 		return
 	}
 
+	// Create ready channel to keep ourselves running until success or another
+	// signal makes us exit.
 	ready := make(chan struct{})
 	in.ready = ready
 	in.Unlock()
@@ -252,8 +254,8 @@ func (in *initializationData) start(ctx context.Context, started chan error) {
 						if debugEnabled {
 							fmt.Printf("kcoid ready: %#v, %#v\n", ddoc, jwks)
 						}
-						close(ready)
 					}
+					close(ready)
 					in.Unlock()
 				}
 			}
@@ -269,8 +271,11 @@ func (in *initializationData) start(ctx context.Context, started chan error) {
 		case <-in.quit:
 			close(started)
 			return
+		case <-ready:
+			close(started)
+			return
 		case <-time.After(retry):
-			// breaks for retry
+			// We break for retries.
 		}
 	}
 }
