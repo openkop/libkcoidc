@@ -17,7 +17,7 @@ CXX      ?= g++
 CFLAGS   ?= -I$(DST_LIBS)
 
 # Cgo
-CGO_ENABLED := 1
+CGO_ENABLED ?= 0
 
 # Variables
 PWD     := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -28,9 +28,10 @@ GOPATH   = $(CURDIR)/.gopath
 BASE     = $(GOPATH)/src/$(PACKAGE)
 PKGS     = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
 TESTPKGS = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS) 2>/dev/null)
-CMDS     = $(or $(CMD),$(addprefix lib/,$(notdir $(shell find "$(PWD)/lib/" -type d))))
-DEPS     = $(addprefix $(DST_LIBS)/,$(addsuffix .h,$(notdir $(CMDS))))
-LIBS     = $(addprefix $(DST_LIBS)/lib,$(addsuffix .so,$(notdir $(CMDS))))
+CMDS     = $(or $(CMD),$(addprefix cmd/,$(notdir $(shell find "$(PWD)/cmd/" -type d))))
+LIBS     = $(or $(CMD),$(addprefix lib/,$(notdir $(shell find "$(PWD)/lib/" -type d))))
+CDEPS    = $(addprefix $(DST_LIBS)/,$(addsuffix .h,$(notdir $(LIBS))))
+CLIBS    = $(addprefix $(DST_LIBS)/lib,$(addsuffix .so,$(notdir $(LIBS))))
 TIMEOUT  = 30
 
 export GOPATH CGO_ENABLED
@@ -38,7 +39,7 @@ export GOPATH CGO_ENABLED
 # Build
 
 .PHONY: all
-all: fmt vendor | $(LIBS)
+all: fmt vendor | $(CLIBS)
 
 $(BASE): ; $(info creating local GOPATH ...)
 	@mkdir -p $(dir $@)
@@ -51,8 +52,17 @@ $(DST_LIBS):
 	@mkdir $@
 
 .PHONY: $(CMDS)
-$(CMDS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building $@ ...) @
-	cd $(BASE) && $(GO) build \
+$(CMDS): vendor | $(BASE) ; $(info building $@ ...) @
+	cd $(BASE) && CGO_ENABLED=$(CGO_ENABLED) $(GO) build \
+		-tags release \
+		-asmflags '-trimpath=$(GOPATH)' \
+		-gcflags '-trimpath=$(GOPATH)' \
+		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external -extldflags -static' \
+		-o bin/$(notdir $@) $(PACKAGE)/$@
+
+.PHONY: $(LIBS)
+$(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...) @
+	cd $(BASE) && CGO_ENABLED=1 $(GO) build \
 		-tags release \
 		-buildmode=c-shared \
 		-asmflags '-trimpath=$(GOPATH)' \
@@ -61,19 +71,19 @@ $(CMDS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building $@ ...) @
 		-o $(DST_LIBS)/$(notdir $@).so $(PACKAGE)/$@
 	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so
 
-$(DEPS): $(CMDS)
+$(CDEPS): $(LIBS)
 
-$(LIBS): $(DEPS)
+$(CLIBS): $(CDEPS)
 
 # Examples
 
 .PHONY: examples
-examples: $(DST_BIN)/validate $(DST_BIN)/benchmark
+examples: $(DST_BIN)/validate-c $(DST_BIN)/benchmark-cpp $(CMDS)
 
-$(DST_BIN)/validate: examples/validate.c $(LIBS)
+$(DST_BIN)/validate-c: examples/validate.c $(CLIBS)
 	$(CC) -Wall -std=c11 -o $@ $^ $(CFLAGS)
 
-$(DST_BIN)/benchmark: examples/benchmark.cpp $(LIBS)
+$(DST_BIN)/benchmark-cpp: examples/benchmark.cpp $(CLIBS)
 	$(CXX) -Wall -O3 -std=c++0x -o $@ $^ -pthread $(CFLAGS)
 
 # Helpers

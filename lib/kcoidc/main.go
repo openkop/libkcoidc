@@ -19,6 +19,176 @@ package main
 
 import (
 	"C"
+	"context"
+	"crypto/tls"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"sync"
+	"time"
+
+	"stash.kopano.io/kc/libkcoidc"
 )
+
+// Global library state. This also means that this library can only use a single
+// OIDC Provider at the same time as the issuer is directly bound to the global
+// library state.
+var mutex sync.RWMutex
+var client *http.Client
+var logger *log.Logger
+var debug bool
+var provider *kcoidc.Provider
+
+func init() {
+	if os.Getenv("KCOIDC_DEBUG") != "" {
+		debug = true
+		fmt.Println("kcoidc-c debug enabled")
+	}
+
+	client = &http.Client{
+		Timeout: 60 * time.Second,
+	}
+
+	logger = log.New(os.Stdout, "", 0)
+
+	// Setup transport defaults.
+	InsecureSkipVerify(false)
+}
+
+// Initialize initializes the global library state with the provided issuer.
+func Initialize(ctx context.Context, iss string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if provider != nil {
+		return kcoidc.ErrStatusAlreadyInitialized
+	}
+
+	issURL, err := url.Parse(iss)
+	if err != nil {
+		if debug {
+			fmt.Printf("kcoidc-c initialize failed with invalid iss value: %v\n", err)
+		}
+		return kcoidc.ErrStatusInvalidIss
+	}
+
+	p, err := kcoidc.NewProvider(client, logger, debug)
+	if err != nil {
+		if debug {
+			fmt.Printf("kcoidc-c initialize failed: %v\n", err)
+		}
+		return err
+	}
+
+	err = p.Initialize(ctx, issURL)
+	if err != nil {
+		if debug {
+			fmt.Printf("kcoidc-c initialize failed: %v\n", err)
+		}
+		return err
+	}
+
+	provider = p
+	if debug {
+		fmt.Printf("kcoidc-c initialize success: %v\n", iss)
+	}
+	return nil
+}
+
+// Uninitialize uninitializes the global library state.
+func Uninitialize() error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if debug {
+		fmt.Println("kcoidc-c uninitialize")
+	}
+
+	err := provider.Uninitialize()
+	if err != nil {
+		return err
+	}
+
+	provider = nil
+	if debug {
+		fmt.Println("kcoidc-c uninitialize success")
+	}
+	return nil
+}
+
+// InsecureSkipVerify sets up the libraries HTTP transport according to the
+// provided parametters.
+func InsecureSkipVerify(insecureSkipVerify bool) error {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	if provider != nil {
+		return kcoidc.ErrStatusAlreadyInitialized
+	}
+
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if insecureSkipVerify {
+		// Only set this when we have something to change to allow Go to use
+		// the internal HTTP2 connection logic otherwise.
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		if debug {
+			fmt.Println("kcoidc-c TLS verification is now disabled - this is insecure")
+		}
+	}
+
+	client.Transport = transport
+	return nil
+}
+
+// WaitUntilReady blocks until the initialization is ready or timeout.
+func WaitUntilReady(timeout time.Duration) error {
+	mutex.RLock()
+	p := provider
+	mutex.RUnlock()
+
+	var err error
+	if debug {
+		fmt.Println("kcoidc-c waiting until ready")
+		defer func() {
+			fmt.Printf("kcoidc-c finished waiting until ready: %v\n", err)
+		}()
+	}
+
+	err = p.WaitUntilReady(timeout)
+	return err
+}
+
+// ValidateTokenString validates the provided token string value and returns
+// the subject as found in the claims.
+func ValidateTokenString(tokenString string) (string, error) {
+	mutex.RLock()
+	p := provider
+	mutex.RUnlock()
+
+	if debug {
+		fmt.Printf("kcoidc-c validate token string: %s\n", tokenString)
+	}
+
+	sub, err := p.ValidateTokenString(tokenString)
+	if err != nil && debug {
+		fmt.Printf("kcoid-c validate token resulted in validation failure: %s\n", err)
+	}
+	return sub, err
+}
 
 func main() {}

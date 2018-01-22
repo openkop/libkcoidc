@@ -15,18 +15,30 @@
  *
  */
 
-package main
+package kcoidc
 
 import (
-	"fmt"
-	"os"
+	"context"
+	"encoding/json"
+	"net/http"
 )
 
-var debugEnabled = false
-
-func init() {
-	if os.Getenv("KCOIDC_DEBUG") != "" {
-		debugEnabled = true
-		fmt.Println("kcoidc debug enabled")
+func fetchJSON(ctx context.Context, client *http.Client, url string, target interface{}) error {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
 	}
+
+	if client == nil {
+		client = http.DefaultClient
+	}
+
+	req = req.WithContext(ctx)
+	response, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	return json.NewDecoder(response.Body).Decode(target)
 }

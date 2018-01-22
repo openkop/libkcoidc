@@ -23,49 +23,51 @@ import "C"
 import (
 	"context"
 	"time"
+
+	"stash.kopano.io/kc/libkcoidc"
 )
 
 //export kcoidc_initialize
 func kcoidc_initialize(issCString *C.char) C.ulonglong {
 	err := Initialize(context.Background(), C.GoString(issCString))
 	if err != nil {
-		return returnKCOIDCErrorOrUnknown(err)
+		return asKnownErrorOrUnknown(err)
 	}
-	return KCOIDCSuccess
+	return kcoidc.StatusSuccess
 }
 
 //export kcoidc_wait_untill_ready
 func kcoidc_wait_untill_ready(timeout C.ulonglong) C.ulonglong {
 	err := WaitUntilReady(time.Duration(timeout) * time.Second)
 	if err != nil {
-		return returnKCOIDCErrorOrUnknown(err)
+		return asKnownErrorOrUnknown(err)
 	}
-	return KCOIDCSuccess
+	return kcoidc.StatusSuccess
 }
 
 //export kcoidc_insecure_skip_verify
 func kcoidc_insecure_skip_verify(enableInsecure C.int) C.ulonglong {
 	err := InsecureSkipVerify(enableInsecure == 1)
 	if err != nil {
-		return returnKCOIDCErrorOrUnknown(err)
+		return asKnownErrorOrUnknown(err)
 	}
-	return KCOIDCSuccess
+	return kcoidc.StatusSuccess
 }
 
 //export kcoidc_validate_token_s
 func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong) {
 	subject, err := ValidateTokenString(C.GoString(tokenCString))
 	if err != nil {
-		return C.CString(subject), returnKCOIDCErrorOrUnknown(err)
+		return C.CString(subject), asKnownErrorOrUnknown(err)
 	}
-	return C.CString(subject), KCOIDCSuccess
+	return C.CString(subject), kcoidc.StatusSuccess
 }
 
 //export kcoidc_uninitialize
 func kcoidc_uninitialize() C.ulonglong {
 	err := Uninitialize()
 	if err != nil {
-		return returnKCOIDCErrorOrUnknown(err)
+		return asKnownErrorOrUnknown(err)
 	}
-	return KCOIDCSuccess
+	return kcoidc.StatusSuccess
 }
