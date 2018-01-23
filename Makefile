@@ -16,6 +16,8 @@ CC       ?= gcc
 CXX      ?= g++
 CFLAGS   ?= -I$(DST_LIBS)
 
+PYTHON ?= python
+
 # Cgo
 CGO_ENABLED ?= 0
 
@@ -74,6 +76,10 @@ $(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...)
 $(CDEPS): $(LIBS)
 
 $(CLIBS): $(CDEPS)
+
+.PHONY: python
+python: $(CDEPS)
+	(cd python && $(PYTHON) setup.py build)
 
 # Examples
 
@@ -161,6 +167,7 @@ clean: ; $(info cleaning ...)	@
 	@rm -rf .libs
 	@rm -rf bin
 	@rm -rf test/test.*
+	(cd python && $(PYTHON) setup.py clean)
 
 .PHONY: version
 version:
