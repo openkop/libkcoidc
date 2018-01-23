@@ -2,6 +2,7 @@
 /bin
 /.libs
 /.gopath
+/test/tests.*
 /golint.txt
 /govet.txt
 /python/build

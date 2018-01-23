@@ -40,8 +40,11 @@ export GOPATH CGO_ENABLED
 
 # Build
 
+.PHONY: default
+default: lib
+
 .PHONY: all
-all: fmt vendor | $(CLIBS)
+all: lib python
 
 $(BASE): ; $(info creating local GOPATH ...)
 	@mkdir -p $(dir $@)
@@ -76,6 +79,9 @@ $(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...)
 $(CDEPS): $(LIBS)
 
 $(CLIBS): $(CDEPS)
+
+.PHONY: lib
+lib: fmt vendor | $(CLIBS)
 
 .PHONY: python
 python: $(CDEPS)
@@ -134,7 +140,7 @@ $(TEST_XML_TARGETS): test-xml
 test-xml: vendor | $(BASE) ; $(info running $(NAME:%=% )tests ...)	@
 	@mkdir -p test
 	cd $(BASE) && 2>&1 CGO_ENABLED=$(CGO_ENABLED) $(GO) test -timeout $(TIMEOUT)s $(ARGS) -v $(TESTPKGS) | tee test/tests.output
-	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
+	$(shell test -s test/tests.output && $(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml)
 
 # Glide
 
