@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+from multiprocessing import cpu_count
 import multiprocessing.dummy as multiprocessing
 import sys
 import time
@@ -45,7 +46,7 @@ def main(args):
         print("> Error: initialize failed: 0x%x" % e.args[0])
         return -1
 
-    concurentThreadsSupported = 8
+    concurentThreadsSupported = cpu_count()
     count = 100000
     pool = multiprocessing.Pool(concurentThreadsSupported)
 
