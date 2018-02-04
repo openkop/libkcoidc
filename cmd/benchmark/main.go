@@ -32,14 +32,14 @@ import (
 	"stash.kopano.io/kc/libkcoidc"
 )
 
-func benchValidateTokenS(provider *kcoidc.Provider, id int, count uint64, tokenString string) {
+func benchValidateTokenS(ctx context.Context, provider *kcoidc.Provider, id int, count uint64, tokenString string) {
 	fmt.Printf("> Info : thread %d started ...\n", id)
 
 	var success uint64
 	var failed uint64
 	var i uint64
 	for i = 0; i < count; i++ {
-		_, err := provider.ValidateTokenString(tokenString)
+		_, _, _, err := provider.ValidateTokenString(ctx, tokenString)
 		if err != nil {
 			fmt.Printf("> Error: validation failed: %v\n", err)
 			failed++
@@ -94,7 +94,7 @@ func run(issString, tokenString string) error {
 	var wg sync.WaitGroup
 
 	// Wait until oidc validation becomes ready.
-	err = provider.WaitUntilReady(10 * time.Second)
+	err = provider.WaitUntilReady(ctx, 10*time.Second)
 	if err != nil {
 		fmt.Printf("> Error: failed to get ready in time: %v\n", err)
 		return err
@@ -106,7 +106,7 @@ func run(issString, tokenString string) error {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			benchValidateTokenS(provider, id, count, tokenString)
+			benchValidateTokenS(ctx, provider, id, count, tokenString)
 		}(id)
 	}
 	wg.Wait()

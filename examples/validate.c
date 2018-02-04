@@ -32,6 +32,7 @@ int main(int argc, char** argv)
 	char* iss_s = argv[1];
 	char* token_s = argv[2];
 	struct kcoidc_validate_token_s_return token_result;
+	struct kcoidc_fetch_userinfo_with_accesstoken_s_return userinfo_result;
 
 	// Allow insecure operations.
 	res = kcoidc_insecure_skip_verify(1);
@@ -58,6 +59,10 @@ int main(int argc, char** argv)
 	gettimeofday(&end, NULL);
 	timersub(&end, &begin, &time_spent);
 
+	// Handle validation result.
+	res = token_result.r1;
+	printf("> Result code   : 0x%x\n", res);
+
 	// Show the result.
 	printf("> Token subject : %s -> %s\n", token_result.r0, token_result.r1 == 0 ? "valid" : "invalid");
 	printf("> Time spent    : %ld.%06lds\n", (long int)time_spent.tv_sec, (long int)time_spent.tv_usec);
@@ -65,9 +70,24 @@ int main(int argc, char** argv)
 	// Free the returned subject memory.
 	free(token_result.r0);
 
-	// Handle validation result.
-	res = token_result.r1;
-	printf("> Result code   : 0x%x\n", res);
+	printf("> Standard      : %s\n", ((char*) token_result.r3));
+	printf("> Extra         : %s\n", ((char*) token_result.r4));
+	printf("> Token type    : %d\n", token_result.r2);
+
+	if (res == 0 && token_result.r2 == KCOIDC_TOKEN_TYPE_KCACCESS) {
+		userinfo_result = kcoidc_fetch_userinfo_with_accesstoken_s(token_s);
+		printf("> Userinfo      : 0x%llu\n", userinfo_result.r1);
+		if (userinfo_result.r1 == 0) {
+			printf("%s\n", ((char*) userinfo_result.r0));
+
+			// Free userinfo data.
+			free(userinfo_result.r0);
+		}
+	}
+
+	// Free the rest.
+	free(token_result.r3);
+	free(token_result.r4);
 
 	// Remember to uninitialize on success as well.
 	res2 = kcoidc_uninitialize();

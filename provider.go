@@ -119,7 +119,7 @@ func (p *Provider) Uninitialize() error {
 }
 
 // WaitUntilReady blocks until the associated Provider is ready or timeout.
-func (p *Provider) WaitUntilReady(timeout time.Duration) error {
+func (p *Provider) WaitUntilReady(ctx context.Context, timeout time.Duration) error {
 	p.mutex.RLock()
 	if !p.initialized {
 		p.mutex.RUnlock()
@@ -131,6 +131,7 @@ func (p *Provider) WaitUntilReady(timeout time.Duration) error {
 	var err error
 	select {
 	case <-ready:
+	case <-ctx.Done():
 	case <-time.After(timeout):
 		err = ErrStatusTimeout
 	}
@@ -213,16 +214,16 @@ func (p *Provider) start(ctx context.Context, started chan error) {
 
 // ValidateTokenString validates the provided token string value with the keys
 // of the accociated Provider and returns the subject as found in the claims.
-func (p *Provider) ValidateTokenString(tokenString string) (string, error) {
+func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) (string, *jwt.StandardClaims, *ExtraClaimsWithType, error) {
 	p.mutex.RLock()
 	ddoc := p.discovery
 	jwks := p.jwks
 	p.mutex.RUnlock()
 	if ddoc == nil || jwks == nil {
-		return "", ErrStatusNotInitialized
+		return "", nil, nil, ErrStatusNotInitialized
 	}
 
-	claims := &jwt.StandardClaims{}
+	claims := &ExtraClaimsWithType{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if p.debug && p.logger != nil {
 			p.logger.Printf("kcoidc validate token header: %#v\n", token.Header)
@@ -253,19 +254,43 @@ func (p *Provider) ValidateTokenString(tokenString string) (string, error) {
 		return key.Key, nil
 	})
 
-	if token != nil && token.Valid {
-		return claims.Subject, nil
-	} else if ve, ok := err.(*jwt.ValidationError); ok {
-		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			err = ErrStatusTokenMalformed
-		} else if ve.Errors&(jwt.ValidationErrorSignatureInvalid|jwt.ValidationErrorUnverifiable) != 0 {
-			err = ErrStatusTokenInvalidSignature
-		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			err = ErrStatusTokenExpiredOrNotValidYet
-		} else {
-			err = ErrStatusTokenValidationFailed
+	// Get standard claims.
+	standardClaims, standardClaimsErr := SplitStandardClaimsFromMapClaims(claims)
+	if err == nil {
+		err = standardClaimsErr
+	}
+	if err == nil {
+		err = standardClaims.Valid()
+	}
+	if err == nil && !token.Valid {
+		// NOTE(longsleep): Can this actually happen?
+		err = ErrStatusTokenValidationFailed
+	}
+	if err != nil {
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+				err = ErrStatusTokenMalformed
+			} else if ve.Errors&(jwt.ValidationErrorSignatureInvalid|jwt.ValidationErrorUnverifiable) != 0 {
+				err = ErrStatusTokenInvalidSignature
+			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+				err = ErrStatusTokenExpiredOrNotValidYet
+			} else {
+				err = ErrStatusTokenValidationFailed
+			}
 		}
 	}
 
-	return claims.Subject, err
+	return standardClaims.Subject, standardClaims, claims, err
+}
+
+// FetchUserinfoWithAccesstokenString fetches the the userinfo result of the
+// accociated provider for the provided access token string.
+func (p *Provider) FetchUserinfoWithAccesstokenString(ctx context.Context, tokenString string) (map[string]interface{}, error) {
+	userinfo := make(map[string]interface{})
+
+	headers := http.Header{
+		"Authorization": []string{fmt.Sprintf("Bearer %s", tokenString)},
+	}
+
+	return userinfo, fetchJSON(ctx, p.client, p.discovery.UserinfoEndpoint, headers, &userinfo)
 }

@@ -17,12 +17,21 @@
 
 package main
 
-// #define KOIDC_API
+/*
+#define KCOIDC_API = 1;
+
+// Token types as defined by kcoidc in claims.go, made usable from C.
+static int const KCOIDC_TOKEN_TYPE_STANDARD = 0;
+static int const KCOIDC_TOKEN_TYPE_KCACCESS = 1;
+static int const KCOIDC_TOKEN_TYPE_KCRERESH = 2;
+*/
 import "C"
 
 import (
 	"context"
+	"encoding/json"
 	"time"
+	"unsafe"
 
 	"stash.kopano.io/kc/libkcoidc"
 )
@@ -55,12 +64,40 @@ func kcoidc_insecure_skip_verify(enableInsecure C.int) C.ulonglong {
 }
 
 //export kcoidc_validate_token_s
-func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong) {
-	subject, err := ValidateTokenString(C.GoString(tokenCString))
-	if err != nil {
-		return C.CString(subject), asKnownErrorOrUnknown(err)
+func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong, C.int, unsafe.Pointer, unsafe.Pointer) {
+	var standardClaimsBytes []byte
+	var extraClaimsBytes []byte
+	tokenType := kcoidc.TokenTypeStandard
+	subject, standardClaims, extraClaims, err := ValidateTokenString(C.GoString(tokenCString))
+	if standardClaims != nil {
+		// Encode to JSON
+		standardClaimsBytes, _ = json.Marshal(standardClaims)
 	}
-	return C.CString(subject), kcoidc.StatusSuccess
+	if extraClaims != nil {
+		// Encode to JSON
+		extraClaimsBytes, _ = json.Marshal(extraClaims)
+		tokenType = extraClaims.KCTokenType()
+	}
+	if err != nil {
+		return C.CString(subject), asKnownErrorOrUnknown(err), C.int(tokenType), C.CBytes(standardClaimsBytes), C.CBytes(extraClaimsBytes)
+	}
+	return C.CString(subject), kcoidc.StatusSuccess, C.int(tokenType), C.CBytes(standardClaimsBytes), C.CBytes(extraClaimsBytes)
+}
+
+//export kcoidc_fetch_userinfo_with_accesstoken_s
+func kcoidc_fetch_userinfo_with_accesstoken_s(tokenCString *C.char) (unsafe.Pointer, C.ulonglong) {
+	userinfo, err := FetchUserinfoWithAccesstokenString(C.GoString(tokenCString))
+	if err != nil {
+		return nil, asKnownErrorOrUnknown(err)
+	}
+
+	// Encode to JSON
+	res, err := json.Marshal(userinfo)
+	if err != nil {
+		return nil, asKnownErrorOrUnknown(err)
+	}
+
+	return C.CBytes(res), kcoidc.StatusSuccess
 }
 
 //export kcoidc_uninitialize

@@ -68,14 +68,14 @@ func run(issString, tokenString string) error {
 		return err
 	}
 	// Wait until oidc validation becomes ready.
-	err = provider.WaitUntilReady(10 * time.Second)
+	err = provider.WaitUntilReady(ctx, 10*time.Second)
 	if err != nil {
 		fmt.Printf("> Error: failed to get ready in time: %v\n", err)
 		return err
 	}
 
 	beginTime := time.Now()
-	sub, err := provider.ValidateTokenString(tokenString)
+	sub, standardClaims, extraClaims, err := provider.ValidateTokenString(ctx, tokenString)
 	endTime := time.Now()
 	duration := endTime.Sub(beginTime)
 
@@ -84,21 +84,42 @@ func run(issString, tokenString string) error {
 		validString = "invalid"
 	}
 
+	if e := printResultOrError(err, "Result code"); e != nil {
+		fmt.Printf("> Error: failed to validate token string: %v\n", e)
+	}
+
 	fmt.Printf("> Token subject : %s -> %s\n", sub, validString)
 	fmt.Printf("> Time spent    : %fs\n", duration.Seconds())
+	fmt.Printf("> Standard      : %v\n", standardClaims)
+	fmt.Printf("> Extra         : %v\n", extraClaims)
+	fmt.Printf("> Token type    : %d\n", extraClaims.KCTokenType())
 
-	switch e := err.(type) {
-	case nil:
-		fmt.Printf("> Result code   : 0x0\n")
-	case kcoidc.ErrStatus:
-		fmt.Printf("> Result code   : 0x%x (%v)\n", uint64(e), e)
-	default:
-		fmt.Printf("> Error: failed to validate token string: %v\n", err)
+	if err == nil && extraClaims.KCTokenType() == kcoidc.TokenTypeKCAccess {
+		userinfo, userinfoErr := provider.FetchUserinfoWithAccesstokenString(ctx, tokenString)
+
+		if e := printResultOrError(userinfoErr, "Userinfo   "); e != nil {
+			fmt.Printf("> Error: failed to fetch userinfo: %v\n", e)
+		} else {
+			fmt.Printf("%v", userinfo)
+		}
 	}
 
 	// Clean up as well.
 	if e := provider.Uninitialize(); e != nil {
 		fmt.Printf("> Error: failed to uninitialize: %v\n", err)
+	}
+
+	return nil
+}
+
+func printResultOrError(err error, msg string) error {
+	switch e := err.(type) {
+	case nil:
+		fmt.Printf("> %s   : 0x0\n", msg)
+	case kcoidc.ErrStatus:
+		fmt.Printf("> %s   : 0x%x (%v)\n", msg, uint64(e), e)
+	default:
+		return err
 	}
 
 	return nil

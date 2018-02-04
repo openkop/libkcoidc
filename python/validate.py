@@ -48,6 +48,15 @@ def main(args):
     res = err and err.args[0] or 0
     print("> Result code   : 0x%x" % res)
 
+    if res == 0:
+        try:
+            userinfo = fetch_userinfo(token_s)
+        except pykcoidc.Error as e:
+            print("> Userinfo      : 0x%x" % e.args[0])
+        else:
+            print("> Userinfo      : 0x0")
+            print(userinfo)
+
     try:
         pykcoidc.uninitialize()
     except pykcoidc.Error as e:
@@ -58,6 +67,10 @@ def main(args):
 
 def validate_and_get_subject(token_s):
     return pykcoidc.validate_token_s(token_s)
+
+
+def fetch_userinfo(token_s):
+    return pykcoidc.fetch_userinfo_with_accesstoken_s(token_s)
 
 
 if __name__ == "__main__":

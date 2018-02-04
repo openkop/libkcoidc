@@ -30,17 +30,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
+
 	"stash.kopano.io/kc/libkcoidc"
 )
 
 // Global library state. This also means that this library can only use a single
 // OIDC Provider at the same time as the issuer is directly bound to the global
 // library state.
-var mutex sync.RWMutex
-var client *http.Client
-var logger *log.Logger
-var debug bool
-var provider *kcoidc.Provider
+var (
+	mutex                    sync.RWMutex
+	client                   *http.Client
+	initializedContext       context.Context
+	initializedContextCancel context.CancelFunc
+	logger                   *log.Logger
+	debug                    bool
+	provider                 *kcoidc.Provider
+)
 
 func init() {
 	if os.Getenv("KCOIDC_DEBUG") != "" {
@@ -92,6 +98,7 @@ func Initialize(ctx context.Context, iss string) error {
 	}
 
 	provider = p
+	initializedContext, initializedContextCancel = context.WithCancel(ctx)
 	if debug {
 		fmt.Printf("kcoidc-c initialize success: %v\n", iss)
 	}
@@ -111,6 +118,10 @@ func Uninitialize() error {
 	if err != nil {
 		return err
 	}
+
+	initializedContextCancel()
+	initializedContext = nil
+	initializedContextCancel = nil
 
 	provider = nil
 	if debug {
@@ -159,6 +170,7 @@ func InsecureSkipVerify(insecureSkipVerify bool) error {
 func WaitUntilReady(timeout time.Duration) error {
 	mutex.RLock()
 	p := provider
+	ctx := initializedContext
 	mutex.RUnlock()
 
 	var err error
@@ -169,26 +181,42 @@ func WaitUntilReady(timeout time.Duration) error {
 		}()
 	}
 
-	err = p.WaitUntilReady(timeout)
+	err = p.WaitUntilReady(ctx, timeout)
 	return err
 }
 
 // ValidateTokenString validates the provided token string value and returns
 // the subject as found in the claims.
-func ValidateTokenString(tokenString string) (string, error) {
+func ValidateTokenString(tokenString string) (string, *jwt.StandardClaims, *kcoidc.ExtraClaimsWithType, error) {
 	mutex.RLock()
 	p := provider
+	ctx := initializedContext
 	mutex.RUnlock()
 
 	if debug {
 		fmt.Printf("kcoidc-c validate token string: %s\n", tokenString)
 	}
 
-	sub, err := p.ValidateTokenString(tokenString)
+	sub, standardClaims, extraClaims, err := p.ValidateTokenString(ctx, tokenString)
 	if err != nil && debug {
 		fmt.Printf("kcoid-c validate token resulted in validation failure: %s\n", err)
 	}
-	return sub, err
+	return sub, standardClaims, extraClaims, err
+}
+
+// FetchUserinfoWithAccesstokenString fetches the available user info for the
+// provided access token and returns it as a string map of values.
+func FetchUserinfoWithAccesstokenString(tokenString string) (map[string]interface{}, error) {
+	mutex.RLock()
+	p := provider
+	ctx := initializedContext
+	mutex.RUnlock()
+
+	userinfo, err := p.FetchUserinfoWithAccesstokenString(ctx, tokenString)
+	if err != nil && debug {
+		fmt.Printf("kcoid-c fetch userinfo failure: %s\n", err)
+	}
+	return userinfo, err
 }
 
 func main() {}

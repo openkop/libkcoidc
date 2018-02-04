@@ -27,13 +27,14 @@ import (
 
 type oidcDiscoveryDocument struct {
 	JWKSUri                   string   `json:"jwks_uri"`
+	UserinfoEndpoint          string   `json:"userinfo_endpoint"`
 	SupportedSigningAlgValues []string `json:"id_token_signing_alg_values_supported"`
 }
 
 func newDiscoveryDocumentFromIssuer(ctx context.Context, client *http.Client, iss string) (*oidcDiscoveryDocument, error) {
 	doc := &oidcDiscoveryDocument{}
 
-	return doc, fetchJSON(ctx, client, fmt.Sprintf("%s/.well-known/openid-configuration", iss), doc)
+	return doc, fetchJSON(ctx, client, fmt.Sprintf("%s/.well-known/openid-configuration", iss), nil, doc)
 }
 
 type oidcJSONWebKeySet struct {
@@ -45,5 +46,7 @@ func newoidcJSONWebKeySetFromURL(ctx context.Context, client *http.Client, url s
 		&jose.JSONWebKeySet{},
 	}
 
-	return doc, fetchJSON(ctx, client, url, doc)
+	return doc, fetchJSON(ctx, client, url, nil, doc)
 }
+
+type userinfoMap map[string]string

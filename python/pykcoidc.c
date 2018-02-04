@@ -109,6 +109,27 @@ pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
+{
+	const char *token_s;
+	struct kcoidc_fetch_userinfo_with_accesstoken_s_return userinfo_result;
+
+	if (!PyArg_ParseTuple(args, "s", &token_s))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS;
+	userinfo_result = kcoidc_fetch_userinfo_with_accesstoken_s(token_s);
+	Py_END_ALLOW_THREADS;
+
+	if (userinfo_result.r1 != 0) {
+		PyErr_SetObject(PyKCOIDCError, PyLong_FromLong(userinfo_result.r1));
+		return NULL;
+	}
+
+	return Py_BuildValue("s", userinfo_result.r0);
+}
+
+static PyObject *
 pykcoidc_uninitialize(PyObject *self, PyObject *args)
 {
 	int res;
@@ -129,10 +150,11 @@ pykcoidc_uninitialize(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MyMethods[] = {
-	{"initialize",  pykcoidc_initialize, METH_VARARGS, "Initialize ODIC."},
-	{"wait_until_ready",  pykcoidc_wait_until_ready, METH_VARARGS, "Wait until ODIC is ready or until timeout."},
-	{"insecure_skip_verify",  pykcoidc_insecure_skip_verify, METH_VARARGS, "Set insecure skip verify flag."},
-	{"validate_token_s",  pykcoidc_validate_token_s, METH_VARARGS, "Validate token and return subject."},
+	{"initialize", pykcoidc_initialize, METH_VARARGS, "Initialize ODIC."},
+	{"wait_until_ready", pykcoidc_wait_until_ready, METH_VARARGS, "Wait until ODIC is ready or until timeout."},
+	{"insecure_skip_verify", pykcoidc_insecure_skip_verify, METH_VARARGS, "Set insecure skip verify flag."},
+	{"validate_token_s", pykcoidc_validate_token_s, METH_VARARGS, "Validate token and return subject."},
+	{"fetch_userinfo_with_accesstoken_s", pykcoidc_fetch_userinfo_with_accesstoken_s, METH_VARARGS, "Fetch userinfo with access token."},
 	{"uninitialize",  pykcoidc_uninitialize, METH_VARARGS, "Uninitialize ODIC."},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
