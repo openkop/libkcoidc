@@ -105,7 +105,7 @@ pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_BuildValue("s", token_result.r0);
+	return Py_BuildValue("zizz", token_result.r0, token_result.r2, token_result.r3, token_result.r4);
 }
 
 static PyObject *
@@ -126,7 +126,7 @@ pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_BuildValue("s", userinfo_result.r0);
+	return Py_BuildValue("z", userinfo_result.r0);
 }
 
 static PyObject *

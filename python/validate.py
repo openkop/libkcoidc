@@ -31,22 +31,26 @@ def main(args):
         print("> Error: failed to get ready in time: 0x%x" % e.args[0])
         return -1
 
-    sub = None
+    token_result = None
     err = None
     begin = time.time()
     # Validate token passed from commandline.
     try:
-        sub = validate_and_get_subject(token_s)
+        token_result = validate_and_get_subject(token_s)
     except pykcoidc.Error as e:
         err = e
     end = time.time()
     time_spent = end - begin
 
-    print("> Token subject : %s -> %s" % (sub, err is None and "valid" or "invalid"))
-    print("> Time spent    : %fs" % time_spent)
-
     res = err and err.args[0] or 0
     print("> Result code   : 0x%x" % res)
+
+    print("> Token subject : %s -> %s" % (token_result and token_result[0], err is None and "valid" or "invalid"))
+    print("> Time spent    : %fs" % time_spent)
+
+    print("> Standard      : %s" % (token_result and token_result[2]))
+    print("> Extra         : %s" % (token_result and token_result[3]))
+    print("> Token type    : %d" % (token_result and token_result[1] or 0))
 
     if res == 0:
         try:

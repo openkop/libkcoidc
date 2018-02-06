@@ -70,15 +70,15 @@ int main(int argc, char** argv)
 	// Free the returned subject memory.
 	free(token_result.r0);
 
-	printf("> Standard      : %s\n", ((char*) token_result.r3));
-	printf("> Extra         : %s\n", ((char*) token_result.r4));
+	printf("> Standard      : %s\n", token_result.r3);
+	printf("> Extra         : %s\n", token_result.r4);
 	printf("> Token type    : %d\n", token_result.r2);
 
 	if (res == 0 && token_result.r2 == KCOIDC_TOKEN_TYPE_KCACCESS) {
 		userinfo_result = kcoidc_fetch_userinfo_with_accesstoken_s(token_s);
 		printf("> Userinfo      : 0x%llu\n", userinfo_result.r1);
 		if (userinfo_result.r1 == 0) {
-			printf("%s\n", ((char*) userinfo_result.r0));
+			printf("%s\n", userinfo_result.r0);
 
 			// Free userinfo data.
 			free(userinfo_result.r0);

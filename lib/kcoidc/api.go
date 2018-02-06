@@ -31,7 +31,6 @@ import (
 	"context"
 	"encoding/json"
 	"time"
-	"unsafe"
 
 	"stash.kopano.io/kc/libkcoidc"
 )
@@ -64,7 +63,7 @@ func kcoidc_insecure_skip_verify(enableInsecure C.int) C.ulonglong {
 }
 
 //export kcoidc_validate_token_s
-func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong, C.int, unsafe.Pointer, unsafe.Pointer) {
+func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong, C.int, *C.char, *C.char) {
 	var standardClaimsBytes []byte
 	var extraClaimsBytes []byte
 	tokenType := kcoidc.TokenTypeStandard
@@ -79,13 +78,13 @@ func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong, C.int,
 		tokenType = extraClaims.KCTokenType()
 	}
 	if err != nil {
-		return C.CString(subject), asKnownErrorOrUnknown(err), C.int(tokenType), C.CBytes(standardClaimsBytes), C.CBytes(extraClaimsBytes)
+		return C.CString(subject), asKnownErrorOrUnknown(err), C.int(tokenType), C.CString(string(standardClaimsBytes)), C.CString(string(extraClaimsBytes))
 	}
-	return C.CString(subject), kcoidc.StatusSuccess, C.int(tokenType), C.CBytes(standardClaimsBytes), C.CBytes(extraClaimsBytes)
+	return C.CString(subject), kcoidc.StatusSuccess, C.int(tokenType), C.CString(string(standardClaimsBytes)), C.CString(string(extraClaimsBytes))
 }
 
 //export kcoidc_fetch_userinfo_with_accesstoken_s
-func kcoidc_fetch_userinfo_with_accesstoken_s(tokenCString *C.char) (unsafe.Pointer, C.ulonglong) {
+func kcoidc_fetch_userinfo_with_accesstoken_s(tokenCString *C.char) (*C.char, C.ulonglong) {
 	userinfo, err := FetchUserinfoWithAccesstokenString(C.GoString(tokenCString))
 	if err != nil {
 		return nil, asKnownErrorOrUnknown(err)
@@ -97,7 +96,7 @@ func kcoidc_fetch_userinfo_with_accesstoken_s(tokenCString *C.char) (unsafe.Poin
 		return nil, asKnownErrorOrUnknown(err)
 	}
 
-	return C.CBytes(res), kcoidc.StatusSuccess
+	return C.CString(string(res)), kcoidc.StatusSuccess
 }
 
 //export kcoidc_uninitialize
