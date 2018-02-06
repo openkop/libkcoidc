@@ -90,6 +90,7 @@ pykcoidc_insecure_skip_verify(PyObject *self, PyObject *args)
 static PyObject *
 pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 {
+	PyObject *res = NULL;
 	const char *token_s;
 	struct kcoidc_validate_token_s_return token_result;
 
@@ -102,15 +103,22 @@ pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 
 	if (token_result.r1 != 0) {
 		PyErr_SetObject(PyKCOIDCError, PyLong_FromLong(token_result.r1));
-		return NULL;
+	} else {
+		res = Py_BuildValue("zizz", token_result.r0, token_result.r2, token_result.r3, token_result.r4);
 	}
 
-	return Py_BuildValue("zizz", token_result.r0, token_result.r2, token_result.r3, token_result.r4);
+	// Free the strings passed from the library.
+	free(token_result.r0);
+	free(token_result.r3);
+	free(token_result.r4);
+
+	return res;
 }
 
 static PyObject *
 pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
 {
+	PyObject *res = NULL;
 	const char *token_s;
 	struct kcoidc_fetch_userinfo_with_accesstoken_s_return userinfo_result;
 
@@ -123,10 +131,14 @@ pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
 
 	if (userinfo_result.r1 != 0) {
 		PyErr_SetObject(PyKCOIDCError, PyLong_FromLong(userinfo_result.r1));
-		return NULL;
+	} else {
+		res = Py_BuildValue("z", userinfo_result.r0);
 	}
 
-	return Py_BuildValue("z", userinfo_result.r0);
+	// Free the strings passed from the library.
+	free(userinfo_result.r0);
+
+	return res;
 }
 
 static PyObject *
@@ -183,16 +195,18 @@ PyInit__pykcoidc(void)
 	return m;
 }
 #else // PY3K
-init_pykcoidc(void)
+void init_pykcoidc(void)
 {
 	PyObject *m;
 
 	m = Py_InitModule3("_pykcoidc", MyMethods, NULL);
 	if (m == NULL)
-		return NULL;
+		return;
 
 	PyKCOIDCError = PyErr_NewException("_pykcoidc.Error", NULL, NULL);
 	Py_INCREF(PyKCOIDCError);
 	PyModule_AddObject(m, "Error", PyKCOIDCError);
+
+	return;
 }
 #endif // PY3K
