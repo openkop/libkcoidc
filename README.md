@@ -93,12 +93,12 @@ make examples && KCOIDC_DEBUG= bin/benchmark-cpp 'https://mose4:8443' "$TOKEN_VA
 > Info : thread 6 done:100000 failed:0
 > Info : thread 8 done:100000 failed:0
 > Info : thread 5 done:100000 failed:0
-> Time : 15.775s
-> Rate : 50713.2 op/s
+> Time : 19.101s
+> Rate : 41882.6 op/s
 yay
 ```
 
 So on my machine (Intel(R) Core(TM) i7-3930K CPU @ 3.20GHz), this gives around
-51000 validations per second with 8 parallel threads.
+42000 validations per second with 8 parallel threads.
 
 The same applications are also implemented in Python and Go for your reference/example.
