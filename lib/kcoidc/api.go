@@ -36,8 +36,8 @@ func kcoidc_initialize(issCString *C.char) C.ulonglong {
 	return kcoidc.StatusSuccess
 }
 
-//export kcoidc_wait_untill_ready
-func kcoidc_wait_untill_ready(timeout C.ulonglong) C.ulonglong {
+//export kcoidc_wait_until_ready
+func kcoidc_wait_until_ready(timeout C.ulonglong) C.ulonglong {
 	err := WaitUntilReady(time.Duration(timeout) * time.Second)
 	if err != nil {
 		return asKnownErrorOrUnknown(err)

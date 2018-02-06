@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 	if ((res = kcoidc::kcoidc_initialize(&iss_s[0u])) != 0) {
 		return handleError("initialize failed", res);
 	};
-	if ((res = kcoidc::kcoidc_wait_untill_ready(10)) != 0) {
+	if ((res = kcoidc::kcoidc_wait_until_ready(10)) != 0) {
 		return handleError("failed to get ready in time", res);
 	};
 

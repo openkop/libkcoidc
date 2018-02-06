@@ -55,7 +55,7 @@ pykcoidc_wait_until_ready(PyObject *self, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS;
-	res = kcoidc_wait_untill_ready(timeout);
+	res = kcoidc_wait_until_ready(timeout);
 	Py_END_ALLOW_THREADS;
 
 	if (res != 0) {

@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 		goto exit;
 	}
 	// Wait until oidc validation becomes ready.
-	res = kcoidc_wait_untill_ready(10);
+	res = kcoidc_wait_until_ready(10);
 	if (res != 0) {
 		printf("> Error: failed to get ready in time: 0x%x\n", res);
 		goto exit;
