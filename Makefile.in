@@ -1,24 +1,29 @@
 PACKAGE  = stash.kopano.io/kc/libkcoidc
 PACKAGE_NAME = $(shell basename $(PACKAGE))
 
-PREFIX ?= /usr/local
+# Autoconf
+
+prefix ?= @prefix@
+exec_prefix ?= @exec_prefix@
+libdir ?= @libdir@
+includedir ?= @includedir@
 
 # Tools
 
-GO      ?= go
-GOFMT   ?= gofmt
-GLIDE   ?= glide
-GOLINT  ?= golint
+GO      ?= @GO@
+GOFMT   ?= @GOFMT@
+GLIDE   ?= @GLIDE@
+GOLINT  ?= @GOLINT@
 
-GO2XUNIT ?= go2xunit
+GO2XUNIT ?= @GO2XUNIT@
 
 DST_BIN  ?= ./bin
 DST_LIBS ?= ./.libs
-CC       ?= gcc
-CXX      ?= g++
+CC       ?= @CC@
+CXX      ?= @CXX@
 CFLAGS   ?= -I$(DST_LIBS)
 
-PYTHON ?= python
+PYTHON ?= @PYTHON@
 
 # Cgo
 CGO_ENABLED ?= 0
@@ -171,20 +176,21 @@ dist: ; $(info building dist tarball ...)
 # Install
 .PHONY: install
 install: lib ; $(info installing ...)
-	@mkdir -p $(DESTDIR)$(PREFIX)/lib
-	@mkdir -p $(DESTDIR)$(PREFIX)/include
-	cp -f $(CLIBS) $(DESTDIR)$(PREFIX)/lib
-	cp -f $(CDEPS) $(DESTDIR)$(PREFIX)/include
+	@mkdir -p $(DESTDIR)$(libdir)
+	@mkdir -p $(DESTDIR)$(includedir)
+	cp -f $(CLIBS) $(DESTDIR)$(libdir)
+	cp -f $(CDEPS) $(DESTDIR)$(includedir)
 
 .PHONY: uninstall
 uninstall: ; $(info uninstalling ...)
-	rm -f $(DESTDIR)$(PREFIX)/lib/$(notdir $(CLIBS))
-	rm -f $(DESTDIR)$(PREFIX)/include/$(notdir $(CDEPS))
+	rm -f $(DESTDIR)$(libdir)/$(notdir $(CLIBS))
+	rm -f $(DESTDIR)$(includedir)/$(notdir $(CDEPS))
 
 # Rest
 
 .PHONY: clean
 clean: ; $(info cleaning ...)	@
+	@rm -f config.* Makefile
 	@rm -rf $(GOPATH)
 	@rm -rf .libs
 	@rm -rf bin

@@ -15,13 +15,15 @@ and you have `~/go/bin` in your $PATH and you have [Glide](https://github.com/Ma
 installed as well.
 
 As this is a C library, it is furthermore assumed that there is a working C
-compiler toolchain in your path.
+compiler toolchain in your path which includes autoconf and make.
 
 ```
 mkdir -p ~/go/src/stash.kopano.io/kc/libkcoidc
 cd ~/go/src/stash.kopano.io/kc
 git clone <THIS-PROJECT> libkcoidc
 cd libkcoidc
+./bootstrap.sh
+./configure
 make
 ```
 

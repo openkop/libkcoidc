@@ -20,7 +20,8 @@ before_install:
   - curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz | tar -vxz -C $HOME/bin --strip=1
   - export PATH="$HOME/bin:$PATH"
 
-install:
-    - glide install
-
-script: make lib examples
+script:
+  - ./bootstrap.sh
+  - ./configure
+  - make
+  - make examples

@@ -6,3 +6,7 @@
 /golint.txt
 /govet.txt
 /python/build
+/autom4te.cache/
+/config.*
+/configure
+/Makefile
