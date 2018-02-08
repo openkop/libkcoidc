@@ -1,6 +1,8 @@
 PACKAGE  = stash.kopano.io/kc/libkcoidc
 PACKAGE_NAME = $(shell basename $(PACKAGE))
 
+PREFIX ?= /usr/local
+
 # Tools
 
 GO      ?= go
@@ -32,8 +34,9 @@ PKGS     = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) $(GO) list ./.
 TESTPKGS = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS) 2>/dev/null)
 CMDS     = $(or $(CMD),$(addprefix cmd/,$(notdir $(shell find "$(PWD)/cmd/" -type d))))
 LIBS     = $(or $(CMD),$(addprefix lib/,$(notdir $(shell find "$(PWD)/lib/" -type d))))
+CAPIVER := 0
 CDEPS    = $(addprefix $(DST_LIBS)/,$(addsuffix .h,$(notdir $(LIBS))))
-CLIBS    = $(addprefix $(DST_LIBS)/lib,$(addsuffix .so,$(notdir $(LIBS))))
+CLIBS    = $(addprefix $(DST_LIBS)/lib,$(addsuffix .so.$(CAPIVER),$(notdir $(LIBS))))
 TIMEOUT  = 30
 
 export GOPATH CGO_ENABLED
@@ -74,7 +77,7 @@ $(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...)
 		-gcflags '-trimpath=$(GOPATH)' \
 		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external' \
 		-o $(DST_LIBS)/$(notdir $@).so $(PACKAGE)/$@
-	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so
+	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so.$(CAPIVER)
 
 $(CDEPS): $(LIBS)
 
@@ -164,6 +167,19 @@ dist: ; $(info building dist tarball ...)
 	cp -avf ../.libs/* "${PACKAGE_NAME}-${VERSION}" && \
 	tar --owner=0 --group=0 -czvf ${PACKAGE_NAME}-${VERSION}.tar.gz "${PACKAGE_NAME}-${VERSION}" && \
 	cd ..
+
+# Install
+.PHONY: install
+install: lib ; $(info installing ...)
+	@mkdir -p $(DESTDIR)$(PREFIX)/lib
+	@mkdir -p $(DESTDIR)$(PREFIX)/include
+	cp -f $(CLIBS) $(DESTDIR)$(PREFIX)/lib
+	cp -f $(CDEPS) $(DESTDIR)$(PREFIX)/include
+
+.PHONY: uninstall
+uninstall: ; $(info uninstalling ...)
+	rm -f $(DESTDIR)$(PREFIX)/lib/$(notdir $(CLIBS))
+	rm -f $(DESTDIR)$(PREFIX)/include/$(notdir $(CDEPS))
 
 # Rest
 
