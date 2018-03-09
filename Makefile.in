@@ -28,6 +28,10 @@ PYTHON ?= @PYTHON@
 # Cgo
 CGO_ENABLED ?= 0
 
+# Library
+SHAREDLIB=libkcoidc.so
+SHAREDLIBV=libkcoidc.so.0
+
 # Variables
 PWD     := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -186,11 +190,16 @@ install: lib ; $(info installing ...)
 	@mkdir -p $(DESTDIR)$(libdir)
 	@mkdir -p $(DESTDIR)$(includedir)
 	cp -f $(CLIBS) $(DESTDIR)$(libdir)
+	chmod 755 $(DESTDIR)$(libdir)/$(SHAREDLIBV)
+	rm -f $(DESTDIR)$(libdir)/$(SHAREDLIB)
+	ln -s $(SHAREDLIBV) $(DESTDIR)$(libdir)/$(SHAREDLIB)
 	cp -f $(CDEPS) $(DESTDIR)$(includedir)
+	(ldconfig || true) >/dev/null 2>&1
 
 .PHONY: uninstall
 uninstall: ; $(info uninstalling ...)
 	rm -f $(DESTDIR)$(libdir)/$(notdir $(CLIBS))
+	rm -f $(DESTDIR)$(libdir)/$(SHAREDLIB)
 	rm -f $(DESTDIR)$(includedir)/$(notdir $(CDEPS))
 
 # Rest
