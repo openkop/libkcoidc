@@ -84,7 +84,7 @@ $(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...)
 		-buildmode=c-shared \
 		-asmflags '-trimpath=$(GOPATH)' \
 		-gcflags '-trimpath=$(GOPATH)' \
-		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external' \
+		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external -extldflags=-Wl,-soname,lib$(notdir $@).so.0' \
 		-o $(DST_LIBS)/$(notdir $@).so $(PACKAGE)/$@
 	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so.$(CAPIVER)
 
