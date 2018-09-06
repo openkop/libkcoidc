@@ -18,7 +18,10 @@
 package main
 
 /*
-#define KCOIDC_API = 1;
+#define KCOIDC_API 1
+#define KCOIDC_API_MINOR 1
+
+#define KCOIDC_VERSION (KCOIDC_API * 10000 + KCOIDC_API_MINOR * 100)
 
 // Token types as defined by kcoidc in claims.go, made usable from C.
 static int const KCOIDC_TOKEN_TYPE_STANDARD = 0;
@@ -68,6 +71,27 @@ func kcoidc_validate_token_s(tokenCString *C.char) (*C.char, C.ulonglong, C.int,
 	var extraClaimsBytes []byte
 	tokenType := kcoidc.TokenTypeStandard
 	subject, standardClaims, extraClaims, err := ValidateTokenString(C.GoString(tokenCString))
+	if standardClaims != nil {
+		// Encode to JSON
+		standardClaimsBytes, _ = json.Marshal(standardClaims)
+	}
+	if extraClaims != nil {
+		// Encode to JSON
+		extraClaimsBytes, _ = json.Marshal(extraClaims)
+		tokenType = extraClaims.KCTokenType()
+	}
+	if err != nil {
+		return C.CString(subject), asKnownErrorOrUnknown(err), C.int(tokenType), C.CString(string(standardClaimsBytes)), C.CString(string(extraClaimsBytes))
+	}
+	return C.CString(subject), kcoidc.StatusSuccess, C.int(tokenType), C.CString(string(standardClaimsBytes)), C.CString(string(extraClaimsBytes))
+}
+
+//export kcoidc_validate_token_and_require_scope_s
+func kcoidc_validate_token_and_require_scope_s(tokenCString *C.char, requiredScopeCString *C.char) (*C.char, C.ulonglong, C.int, *C.char, *C.char) {
+	var standardClaimsBytes []byte
+	var extraClaimsBytes []byte
+	tokenType := kcoidc.TokenTypeStandard
+	subject, standardClaims, extraClaims, err := ValidateTokenStringAndRequireClaim(C.GoString(tokenCString), C.GoString(requiredScopeCString))
 	if standardClaims != nil {
 		// Encode to JSON
 		standardClaimsBytes, _ = json.Marshal(standardClaims)

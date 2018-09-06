@@ -44,6 +44,7 @@ const (
 	ErrStatusTokenValidationFailed
 	ErrStatusClosed
 	ErrStatusWrongInitialization
+	ErrStatusMissingRequiredScope
 )
 
 // StatusSuccess is the success response as returned by this library.
@@ -64,6 +65,7 @@ var ErrStatusTextMap = map[ErrStatus]string{
 	ErrStatusTokenValidationFailed:        "Token Validation Failed",
 	ErrStatusClosed:                       "Is Closed",
 	ErrStatusWrongInitialization:          "Wrong Initialization",
+	ErrStatusMissingRequiredScope:         "Missing required scope",
 }
 
 // ErrStatusText returns a text for the ErrStatus. It returns the empty string

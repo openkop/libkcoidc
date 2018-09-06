@@ -28,6 +28,8 @@ const (
 
 	IdentityClaim         = "kc.identity"
 	IdentifiedUserIDClaim = "kc.i.id"
+
+	AuthorizedScopesClaim = "kc.authorizedScopes"
 )
 
 // Token types as int.
@@ -82,4 +84,40 @@ func AuthenticatedUserIDFromClaims(claims *ExtraClaimsWithType) (string, bool) {
 	}
 
 	return "", false
+}
+
+// AuthorizedScopesFromClaims authorize scopes as bool map from the provided
+// extra claims.
+func AuthorizedScopesFromClaims(claims *ExtraClaimsWithType) map[string]bool {
+	if authorizedScopes, _ := (*claims)[AuthorizedScopesClaim].([]interface{}); authorizedScopes != nil {
+		authorizedScopesMap := make(map[string]bool)
+		for _, scope := range authorizedScopes {
+			authorizedScopesMap[scope.(string)] = true
+		}
+
+		return authorizedScopesMap
+	}
+
+	return nil
+}
+
+// RequireScopesInClaims returns nil if all the provided scopes are found in
+// the provided claims. Otherwise an error is returned.
+func RequireScopesInClaims(claims *ExtraClaimsWithType, requiredScopes []string) error {
+	if len(requiredScopes) == 0 {
+		return nil
+	}
+
+	authorizedScopes := AuthorizedScopesFromClaims(claims)
+	missingScopes := make([]string, 0)
+	for _, scope := range requiredScopes {
+		if ok, _ := authorizedScopes[scope]; !ok {
+			missingScopes = append(missingScopes, scope)
+		}
+	}
+	if len(missingScopes) == 0 {
+		return nil
+	}
+
+	return ErrStatusMissingRequiredScope
 }

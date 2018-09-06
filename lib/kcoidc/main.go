@@ -186,7 +186,8 @@ func WaitUntilReady(timeout time.Duration) error {
 }
 
 // ValidateTokenString validates the provided token string value and returns
-// the subject as found in the claims.
+// the authenticated users ID as found the claims the standard claims and all
+// extra claims. Error will be set when the validation failed.
 func ValidateTokenString(tokenString string) (string, *jwt.StandardClaims, *kcoidc.ExtraClaimsWithType, error) {
 	mutex.RLock()
 	p := provider
@@ -197,11 +198,30 @@ func ValidateTokenString(tokenString string) (string, *jwt.StandardClaims, *kcoi
 		fmt.Printf("kcoidc-c validate token string: %s\n", tokenString)
 	}
 
-	sub, standardClaims, extraClaims, err := p.ValidateTokenString(ctx, tokenString)
+	authenticatedUserID, standardClaims, extraClaims, err := p.ValidateTokenString(ctx, tokenString)
 	if err != nil && debug {
 		fmt.Printf("kcoid-c validate token resulted in validation failure: %s\n", err)
 	}
-	return sub, standardClaims, extraClaims, err
+	return authenticatedUserID, standardClaims, extraClaims, err
+}
+
+// ValidateTokenStringAndRequireClaim validates the provided token string value
+//  and returns the authenticated users ID as found the claims the standard
+// claims and all extra claims. In addition, the token must have authenticated
+// the provided requiredScope. Error will be set when the validation failed or
+// the required scope is not authenticated.
+func ValidateTokenStringAndRequireClaim(tokenString string, requiredScope string) (string, *jwt.StandardClaims, *kcoidc.ExtraClaimsWithType, error) {
+	authenticatedUserID, standardClaims, extraClaims, err := ValidateTokenString(tokenString)
+	if err != nil {
+		return authenticatedUserID, standardClaims, extraClaims, err
+	}
+
+	err = kcoidc.RequireScopesInClaims(extraClaims, []string{requiredScope})
+	if err != nil && debug {
+		fmt.Printf("kcoidc-c validate token and require claims result in scope require failure: %s\n", err)
+	}
+
+	return authenticatedUserID, standardClaims, extraClaims, err
 }
 
 // FetchUserinfoWithAccesstokenString fetches the available user info for the

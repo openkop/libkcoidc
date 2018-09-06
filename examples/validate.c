@@ -64,7 +64,8 @@ int main(int argc, char** argv)
 	printf("> Result code   : 0x%x\n", res);
 
 	// Show the result.
-	printf("> Token subject : %s -> %s\n", token_result.r0, token_result.r1 == 0 ? "valid" : "invalid");
+	printf("> Validation    : %s\n", token_result.r1 == 0 ? "valid" : "invalid");
+	printf("> Auth ID       : %s\n", token_result.r0);
 	printf("> Time spent    : %ld.%06lds\n", (long int)time_spent.tv_sec, (long int)time_spent.tv_usec);
 
 	// Free the returned subject memory.

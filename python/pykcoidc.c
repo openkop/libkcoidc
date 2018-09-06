@@ -22,6 +22,10 @@
 #define PY3K
 #endif
 
+#if KCOIDC_VERSION >= 10100
+#define WITH_REQUIRE_SCOPE
+#endif
+
 static PyObject *PyKCOIDCError;
 
 static PyObject *
@@ -115,6 +119,37 @@ pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 	return res;
 }
 
+#ifdef WITH_REQUIRE_SCOPE
+static PyObject *
+pykcoidc_validate_token_and_require_scope_s(PyObject *self, PyObject *args)
+{
+	PyObject *res = NULL;
+	const char *token_s;
+	const char *required_scope_s;
+	struct kcoidc_validate_token_and_require_scope_s_return token_result;
+
+	if (!PyArg_ParseTuple(args, "ss", &token_s, &required_scope_s))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS;
+	token_result = kcoidc_validate_token_and_require_scope_s(token_s, required_scope_s);
+	Py_END_ALLOW_THREADS;
+
+	if (token_result.r1 != 0) {
+		PyErr_SetObject(PyKCOIDCError, PyLong_FromLong(token_result.r1));
+	} else {
+		res = Py_BuildValue("zizz", token_result.r0, token_result.r2, token_result.r3, token_result.r4);
+	}
+
+	// Free the strings passed from the library.
+	free(token_result.r0);
+	free(token_result.r3);
+	free(token_result.r4);
+
+	return res;
+}
+#endif
+
 static PyObject *
 pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
 {
@@ -165,7 +200,10 @@ static PyMethodDef MyMethods[] = {
 	{"initialize", pykcoidc_initialize, METH_VARARGS, "Initialize ODIC."},
 	{"wait_until_ready", pykcoidc_wait_until_ready, METH_VARARGS, "Wait until ODIC is ready or until timeout."},
 	{"insecure_skip_verify", pykcoidc_insecure_skip_verify, METH_VARARGS, "Set insecure skip verify flag."},
-	{"validate_token_s", pykcoidc_validate_token_s, METH_VARARGS, "Validate token and return subject."},
+	{"validate_token_s", pykcoidc_validate_token_s, METH_VARARGS, "Validate token and return authenticted user ID."},
+#ifdef WITH_REQUIRE_SCOPE
+	{"validate_token_and_require_scope_s", pykcoidc_validate_token_and_require_scope_s, METH_VARARGS, "Validate token and scope and return authenticated user ID."},
+#endif
 	{"fetch_userinfo_with_accesstoken_s", pykcoidc_fetch_userinfo_with_accesstoken_s, METH_VARARGS, "Fetch userinfo with access token."},
 	{"uninitialize",  pykcoidc_uninitialize, METH_VARARGS, "Uninitialize ODIC."},
 	{NULL, NULL, 0, NULL} /* Sentinel */

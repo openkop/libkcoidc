@@ -36,7 +36,7 @@ def main(args):
     begin = time.time()
     # Validate token passed from commandline.
     try:
-        token_result = validate_and_get_subject(token_s)
+        token_result = validate(token_s)
     except pykcoidc.Error as e:
         err = e
     end = time.time()
@@ -45,7 +45,8 @@ def main(args):
     res = err and err.args[0] or 0
     print("> Result code   : 0x%x" % res)
 
-    print("> Token subject : %s -> %s" % (token_result and token_result[0], err is None and "valid" or "invalid"))
+    print("> Validation    : %s" % (err is None and "valid" or "invalid"))
+    print("> Auth ID       : %s" % (token_result and token_result[0]))
     print("> Time spent    : %fs" % time_spent)
 
     print("> Standard      : %s" % (token_result and token_result[2]))
@@ -69,7 +70,7 @@ def main(args):
     return res != 0 and -1 or 0
 
 
-def validate_and_get_subject(token_s):
+def validate(token_s):
     return pykcoidc.validate_token_s(token_s)
 
 
