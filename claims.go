@@ -79,8 +79,9 @@ func SplitStandardClaimsFromMapClaims(claims *ExtraClaimsWithType) (*jwt.Standar
 // from the provided extra claims.
 func AuthenticatedUserIDFromClaims(claims *ExtraClaimsWithType) (string, bool) {
 	if identityClaims, _ := (*claims)[IdentityClaim].(map[string]interface{}); identityClaims != nil {
-		authenticatedUserID, _ := identityClaims[IdentifiedUserIDClaim].(string)
-		return authenticatedUserID, true
+		if authenticatedUserID, _ := identityClaims[IdentifiedUserIDClaim].(string); authenticatedUserID != "" {
+			return authenticatedUserID, true
+		}
 	}
 
 	return "", false
