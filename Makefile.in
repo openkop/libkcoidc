@@ -87,6 +87,7 @@ $(LIBS): vendor | $(BASE) $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...)
 		-ldflags '-s -w -X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.BuildDate=$(DATE) -linkmode external -extldflags=-Wl,-soname,lib$(notdir $@).so.0' \
 		-o $(DST_LIBS)/$(notdir $@).so $(PACKAGE)/$@
 	@mv $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so.$(CAPIVER)
+	cd $(DST_LIBS) && ln -sfn lib$(notdir $@).so.$(CAPIVER) lib$(notdir $@).so
 
 $(CDEPS): $(LIBS)
 
