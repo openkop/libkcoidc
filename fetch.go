@@ -20,10 +20,12 @@ package kcoidc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 )
 
-func fetchJSON(ctx context.Context, client *http.Client, url string, headers http.Header, target interface{}) error {
+func fetchJSON(ctx context.Context, client *http.Client, url string, headers http.Header, validContentTypes []string, target interface{}) error {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
@@ -42,6 +44,20 @@ func fetchJSON(ctx context.Context, client *http.Client, url string, headers htt
 		return err
 	}
 	defer response.Body.Close()
+
+	if len(validContentTypes) > 0 {
+		contentType := strings.SplitN(response.Header.Get("Content-Type"), ";", 2)[0]
+		valid := false
+		for _, ct := range validContentTypes {
+			if ct == contentType {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return fmt.Errorf("unexpected response content-type: %s", contentType)
+		}
+	}
 
 	return json.NewDecoder(response.Body).Decode(target)
 }

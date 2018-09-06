@@ -302,5 +302,5 @@ func (p *Provider) FetchUserinfoWithAccesstokenString(ctx context.Context, token
 		"Authorization": []string{fmt.Sprintf("Bearer %s", tokenString)},
 	}
 
-	return userinfo, fetchJSON(ctx, p.client, p.discovery.UserinfoEndpoint, headers, &userinfo)
+	return userinfo, fetchJSON(ctx, p.client, p.discovery.UserinfoEndpoint, headers, contentTypeJSONOnly, &userinfo)
 }

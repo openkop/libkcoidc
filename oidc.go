@@ -25,6 +25,9 @@ import (
 	"gopkg.in/square/go-jose.v2"
 )
 
+var contentTypeJSONOnly = []string{"application/json"}
+var contentTypeJWKSetAndJSON = []string{"application/jwk-set+json", "application/json"}
+
 type oidcDiscoveryDocument struct {
 	JWKSUri                   string   `json:"jwks_uri"`
 	UserinfoEndpoint          string   `json:"userinfo_endpoint"`
@@ -34,7 +37,7 @@ type oidcDiscoveryDocument struct {
 func newDiscoveryDocumentFromIssuer(ctx context.Context, client *http.Client, iss string) (*oidcDiscoveryDocument, error) {
 	doc := &oidcDiscoveryDocument{}
 
-	return doc, fetchJSON(ctx, client, fmt.Sprintf("%s/.well-known/openid-configuration", iss), nil, doc)
+	return doc, fetchJSON(ctx, client, fmt.Sprintf("%s/.well-known/openid-configuration", iss), nil, contentTypeJSONOnly, doc)
 }
 
 type oidcJSONWebKeySet struct {
@@ -46,7 +49,7 @@ func newoidcJSONWebKeySetFromURL(ctx context.Context, client *http.Client, url s
 		&jose.JSONWebKeySet{},
 	}
 
-	return doc, fetchJSON(ctx, client, url, nil, doc)
+	return doc, fetchJSON(ctx, client, url, nil, contentTypeJWKSetAndJSON, doc)
 }
 
 type userinfoMap map[string]string
