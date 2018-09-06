@@ -213,7 +213,8 @@ func (p *Provider) start(ctx context.Context, started chan error) {
 }
 
 // ValidateTokenString validates the provided token string value with the keys
-// of the accociated Provider and returns the subject as found in the claims.
+// of the accociated Provider and returns the authenticated users ID as found in
+// the claims, the standard claims and all extra claims.
 func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) (string, *jwt.StandardClaims, *ExtraClaimsWithType, error) {
 	p.mutex.RLock()
 	ddoc := p.discovery
@@ -280,7 +281,16 @@ func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) 
 		}
 	}
 
-	return standardClaims.Subject, standardClaims, claims, err
+	// Get authenticated UserID
+	authenticatedUserID, ok := AuthenticatedUserIDFromClaims(claims)
+	if !ok {
+		// NOTE(longsleep): Fallback to standard Subject if no extra information
+		// is set in token. This can happen for older Konnect installations
+		// which did not set this claim. Let's do this for compatibility.
+		authenticatedUserID = standardClaims.Subject
+	}
+
+	return authenticatedUserID, standardClaims, claims, err
 }
 
 // FetchUserinfoWithAccesstokenString fetches the the userinfo result of the

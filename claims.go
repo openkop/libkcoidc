@@ -25,6 +25,9 @@ import (
 const (
 	IsAccessTokenClaim  = "kc.isAccessToken"
 	IsRefreshTokenClaim = "kc.isRefreshToken"
+
+	IdentityClaim         = "kc.identity"
+	IdentifiedUserIDClaim = "kc.i.id"
 )
 
 // Token types as int.
@@ -68,4 +71,15 @@ func SplitStandardClaimsFromMapClaims(claims *ExtraClaimsWithType) (*jwt.Standar
 	}
 
 	return std, nil
+}
+
+// AuthenticatedUserIDFromClaims extracts extra Kopano Connect identified claims
+// from the provided extra claims.
+func AuthenticatedUserIDFromClaims(claims *ExtraClaimsWithType) (string, bool) {
+	if identityClaims, _ := (*claims)[IdentityClaim].(map[string]interface{}); identityClaims != nil {
+		authenticatedUserID, _ := identityClaims[IdentifiedUserIDClaim].(string)
+		return authenticatedUserID, true
+	}
+
+	return "", false
 }

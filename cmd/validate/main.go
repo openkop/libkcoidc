@@ -75,7 +75,7 @@ func run(issString, tokenString string) error {
 	}
 
 	beginTime := time.Now()
-	sub, standardClaims, extraClaims, err := provider.ValidateTokenString(ctx, tokenString)
+	authenticatedUserID, standardClaims, extraClaims, err := provider.ValidateTokenString(ctx, tokenString)
 	endTime := time.Now()
 	duration := endTime.Sub(beginTime)
 
@@ -88,7 +88,9 @@ func run(issString, tokenString string) error {
 		fmt.Printf("> Error: failed to validate token string: %v\n", e)
 	}
 
-	fmt.Printf("> Token subject : %s -> %s\n", sub, validString)
+	fmt.Printf("> Validation    : %s\n", validString)
+	fmt.Printf("> Auth ID       : %s\n", authenticatedUserID)
+	fmt.Printf("> Subject       : %s\n", standardClaims.Subject)
 	fmt.Printf("> Time spent    : %fs\n", duration.Seconds())
 	fmt.Printf("> Standard      : %v\n", standardClaims)
 	fmt.Printf("> Extra         : %v\n", extraClaims)
