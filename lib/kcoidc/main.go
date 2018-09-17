@@ -110,6 +110,10 @@ func Uninitialize() error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	if provider == nil {
+		return nil
+	}
+
 	if debug {
 		fmt.Println("kcoidc-c uninitialize")
 	}
@@ -181,7 +185,12 @@ func WaitUntilReady(timeout time.Duration) error {
 		}()
 	}
 
-	err = p.WaitUntilReady(ctx, timeout)
+	if p == nil {
+		err = kcoidc.ErrStatusNotInitialized
+	} else {
+		err = p.WaitUntilReady(ctx, timeout)
+	}
+
 	return err
 }
 
@@ -196,6 +205,9 @@ func ValidateTokenString(tokenString string) (string, *jwt.StandardClaims, *kcoi
 
 	if debug {
 		fmt.Printf("kcoidc-c validate token string: %s\n", tokenString)
+	}
+	if p == nil {
+		return "", nil, nil, kcoidc.ErrStatusNotInitialized
 	}
 
 	authenticatedUserID, standardClaims, extraClaims, err := p.ValidateTokenString(ctx, tokenString)
@@ -231,6 +243,10 @@ func FetchUserinfoWithAccesstokenString(tokenString string) (map[string]interfac
 	p := provider
 	ctx := initializedContext
 	mutex.RUnlock()
+
+	if p == nil {
+		return nil, kcoidc.ErrStatusNotInitialized
+	}
 
 	userinfo, err := p.FetchUserinfoWithAccesstokenString(ctx, tokenString)
 	if err != nil && debug {
