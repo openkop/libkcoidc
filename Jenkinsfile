@@ -21,6 +21,7 @@ pipeline {
 				sh 'go get -v github.com/golang/lint/golint'
 				sh 'go get -v github.com/tebeka/go2xunit'
 				sh 'apt-get update && apt-get install -y build-essential autoconf'
+				sh 'go version'
 			}
 		}
 		stage('Lint') {
