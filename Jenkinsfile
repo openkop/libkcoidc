@@ -24,13 +24,6 @@ pipeline {
 				sh 'go version'
 			}
 		}
-		stage('Lint') {
-			steps {
-				echo 'Linting..'
-				sh 'golint \$(glide nv) | tee golint.txt || true'
-				sh 'go vet \$(glide nv) | tee govet.txt || true'
-			}
-		}
 		stage('Build') {
 			steps {
 				echo 'Building..'
@@ -38,6 +31,13 @@ pipeline {
 				sh './configure --prefix=/tmp'
 				sh 'make'
 				sh 'make examples'
+			}
+		}
+		stage('Lint') {
+			steps {
+				echo 'Linting..'
+				sh 'golint \$(glide nv) | tee golint.txt || true'
+				sh 'go vet \$(glide nv) | tee govet.txt || true'
 			}
 		}
 		stage('Test') {
