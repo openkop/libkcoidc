@@ -10,7 +10,7 @@ Also this project can be used directly from Go as an importable module.
 
 ## Compiling
 
-Make sure you have Go 1.8 or later installed. This assumes your GOPATH is `~/go`
+Make sure you have Go 1.10 or later installed. This assumes your GOPATH is `~/go`
 and you have `~/go/bin` in your $PATH and you have [Glide](https://github.com/Masterminds/glide)
 installed as well.
 
