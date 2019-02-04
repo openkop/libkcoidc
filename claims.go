@@ -28,8 +28,10 @@ const (
 
 	IdentityClaim         = "kc.identity"
 	IdentifiedUserIDClaim = "kc.i.id"
+	IdentifiedUserIsGuest = "kc.i.guest"
 
 	AuthorizedScopesClaim = "kc.authorizedScopes"
+	AuthorizedClaimsClaim = "kc.authorizedClaims"
 )
 
 // Token types as int.
@@ -76,7 +78,7 @@ func SplitStandardClaimsFromMapClaims(claims *ExtraClaimsWithType) (*jwt.Standar
 }
 
 // AuthenticatedUserIDFromClaims extracts extra Kopano Connect identified claims
-// from the provided extra claims.
+// from the provided extra claims, returning the authenticated user id.
 func AuthenticatedUserIDFromClaims(claims *ExtraClaimsWithType) (string, bool) {
 	if identityClaims, _ := (*claims)[IdentityClaim].(map[string]interface{}); identityClaims != nil {
 		if authenticatedUserID, _ := identityClaims[IdentifiedUserIDClaim].(string); authenticatedUserID != "" {
@@ -87,8 +89,19 @@ func AuthenticatedUserIDFromClaims(claims *ExtraClaimsWithType) (string, bool) {
 	return "", false
 }
 
-// AuthorizedScopesFromClaims authorize scopes as bool map from the provided
-// extra claims.
+// AuthenticatedUserIsGuest extract extra Kopano Connect identified claims from
+// the provided extra claims, returning if the claims are for a guest or not.
+func AuthenticatedUserIsGuest(claims *ExtraClaimsWithType) bool {
+	if identityClaims, _ := (*claims)[IdentityClaim].(map[string]interface{}); identityClaims != nil {
+		isGuest, _ := identityClaims[IdentifiedUserIsGuest].(bool)
+		return isGuest
+	}
+
+	return false
+}
+
+// AuthorizedScopesFromClaims returns the authorized scopes as bool map from
+// the provided extra claims.
 func AuthorizedScopesFromClaims(claims *ExtraClaimsWithType) map[string]bool {
 	if authorizedScopes, _ := (*claims)[AuthorizedScopesClaim].([]interface{}); authorizedScopes != nil {
 		authorizedScopesMap := make(map[string]bool)
@@ -100,6 +113,14 @@ func AuthorizedScopesFromClaims(claims *ExtraClaimsWithType) map[string]bool {
 	}
 
 	return nil
+}
+
+// AuthorizedClaimsFromClaims returns the authorized claims as map from the
+// provided extra claims.
+func AuthorizedClaimsFromClaims(claims *ExtraClaimsWithType) map[string]interface{} {
+	authorizedClaims, _ := (*claims)[AuthorizedClaimsClaim].(map[string]interface{})
+
+	return authorizedClaims
 }
 
 // RequireScopesInClaims returns nil if all the provided scopes are found in
