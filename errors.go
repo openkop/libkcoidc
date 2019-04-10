@@ -24,8 +24,8 @@ import (
 // ErrStatus is the Error type as used by kcoidc.
 type ErrStatus uint64
 
-func (ErrStatus ErrStatus) Error() string {
-	return fmt.Sprintf("%s (:0x%x)", ErrStatusText(ErrStatus), uint64(ErrStatus))
+func (errStatus ErrStatus) Error() string {
+	return fmt.Sprintf("%s (:0x%x)", ErrStatusText(errStatus), uint64(errStatus))
 }
 
 // ErrStatusors as defined by this library.
