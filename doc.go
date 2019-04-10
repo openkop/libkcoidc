@@ -16,4 +16,3 @@
  */
 
 package kcoidc // import "stash.kopano.io/kc/libkcoidc"
-
