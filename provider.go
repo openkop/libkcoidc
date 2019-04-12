@@ -249,7 +249,7 @@ func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) 
 
 		key := keys[0]
 		if p.debug && p.logger != nil {
-			fmt.Printf("kcoidc validate token key: %#v (%v)\n", key.Key, kid)
+			p.logger.Printf("kcoidc validate token key: %#v (%v)\n", key.Key, kid)
 		}
 
 		return key.Key, nil
