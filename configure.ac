@@ -12,15 +12,18 @@ if ! which "${GO}" >/dev/null ; then
     AC_MSG_ERROR([Please install Go (https://golang.org) before trying to build libkcoidc])
 fi
 
-AC_PATH_PROG([GLIDE],[glide])
-if ! which "${GLIDE}" >/dev/null ; then
-    AC_MSG_ERROR([Please install glide (https://glide.sh/) before trying to build libkcoidc])
+AC_PATH_PROG([DEP],[dep])
+if ! which "${DEP}" >/dev/null ; then
+    AC_MSG_ERROR([Please install dep (https://golang.github.io/dep/) before trying to build libkcoidc])
 fi
 
 AC_PATH_PROG([GOFMT],[gofmt])
 AC_PATH_PROG([GOLINT],[golint])
 AC_PATH_PROG([GO2XUNIT],[go2xunit])
 
-AC_PATH_PROG([PYTHON],[python],[python])
+AC_ARG_WITH([python],
+	[AS_HELP_STRING([--with-python=PATH], [path to Python binary])],
+	[PYTHON=$withval],
+	[AC_PATH_PROGS([PYTHON],[python3 python python2],[python])])
 
 AC_OUTPUT(Makefile)
