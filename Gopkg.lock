@@ -41,7 +41,7 @@
   revision = "f416ebab96af27ca70b6e5c23d6a0747530da626"
 
 [[projects]]
-  digest = "1:26a278a34e30cc8fbd09d5f7474488ac4cbad325c2b592b30e76e5d7d2fc1f10"
+  digest = "1:8c05919580be8a5be668709d7e5a69d5cd19b8ee9f23d62ce5b10d3457bf6a13"
   name = "gopkg.in/square/go-jose.v2"
   packages = [
     ".",
@@ -49,16 +49,16 @@
     "json",
   ]
   pruneopts = "UT"
-  revision = "ef984e69dd356202fd4e4910d4d9c24468bdf0b8"
-  version = "v2.1.9"
+  revision = "730df5f748271903322feb182be83b43ebbbe27d"
+  version = "v2.3.1"
 
 [[projects]]
-  branch = "master"
   digest = "1:05c67dc6aab8d89af757f205480b320b4ffe60f176ba6f5b8908bbfd3bf69cd0"
   name = "stash.kopano.io/kgol/oidc-go"
   packages = ["."]
   pruneopts = "UT"
   revision = "0f3bf16d2ef6d2c4b66bcac7a9c17ed29cc574cf"
+  version = "v0.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
