@@ -21,9 +21,6 @@ AC_PATH_PROG([GOFMT],[gofmt])
 AC_PATH_PROG([GOLINT],[golint])
 AC_PATH_PROG([GO2XUNIT],[go2xunit])
 
-AC_ARG_WITH([python],
-	[AS_HELP_STRING([--with-python=PATH], [path to Python binary])],
-	[PYTHON=$withval],
-	[AC_PATH_PROGS([PYTHON],[python3 python python2],[python])])
+AC_PATH_PROGS([PYTHON],[python3 python python2],[python])
 
 AC_OUTPUT(Makefile)

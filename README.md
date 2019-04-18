@@ -11,7 +11,7 @@ Also this project can be used directly from Go as an importable module.
 ## Compiling
 
 Make sure you have Go 1.10 or later installed. This assumes your GOPATH is `~/go`
-and you have `~/go/bin` in your $PATH and you have [Glide](https://github.com/Masterminds/glide)
+and you have `~/go/bin` in your $PATH and you have [Dep](https://golang.github.io/dep/)
 installed as well.
 
 As this is a C library, it is furthermore assumed that there is a working C
@@ -39,8 +39,9 @@ the `./.libs` directory.
 ### Compile python module
 
 The Python module supports Python 3 and Python 2. By default it compiles with
-whatever python in your path as `python`. Use the `PYTHON` environment variable
-to compile for a specific python.
+whatever Python in your path as `python3`, `python` or `python2` whichever is
+found first. Use the `PYTHON` environment variable to compile for a specific
+Python.
 
 ```
 PYTHON=python3 make python
