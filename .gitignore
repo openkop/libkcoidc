@@ -2,6 +2,7 @@
 /bin
 /.libs
 /.gopath
+/.vscode
 /dist
 /test/tests.*
 /golint.txt
