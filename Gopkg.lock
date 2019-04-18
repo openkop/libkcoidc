@@ -2,12 +2,31 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:a4b30dab05a035c96618400af0b15e1896e37f213a925735faa1455a5f49ace1"
+  name = "github.com/desertbit/timer"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c41aec40b27f0eeb2b94300fffcd624c69b02990"
+
+[[projects]]
   digest = "1:217f778e19b8d206112c21d21a7cc72ca3cb493b67631680a2324bc50335d432"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   pruneopts = "UT"
   revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
   version = "v3.1.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:bd9efe4e0b0f768302a1e2f0c22458149278de533e521206e5ddc71848c269a0"
+  name = "github.com/pquerna/cachecontrol"
+  packages = [
+    ".",
+    "cacheobject",
+  ]
+  pruneopts = "UT"
+  revision = "1555304b9b35fdd2b425bccf1a5613677705e7d0"
 
 [[projects]]
   branch = "master"
@@ -33,12 +52,20 @@
   revision = "ef984e69dd356202fd4e4910d4d9c24468bdf0b8"
   version = "v2.1.9"
 
+[[projects]]
+  branch = "master"
+  digest = "1:05c67dc6aab8d89af757f205480b320b4ffe60f176ba6f5b8908bbfd3bf69cd0"
+  name = "stash.kopano.io/kgol/oidc-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0f3bf16d2ef6d2c4b66bcac7a9c17ed29cc574cf"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/dgrijalva/jwt-go",
-    "gopkg.in/square/go-jose.v2",
+    "stash.kopano.io/kgol/oidc-go",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

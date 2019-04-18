@@ -20,13 +20,13 @@ package kcoidc
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"stash.kopano.io/kgol/oidc-go"
 )
 
 // A Provider is a representation of an OpenID Connect Provider (OP).
@@ -34,28 +34,27 @@ type Provider struct {
 	mutex sync.RWMutex
 
 	initialized bool
+	provider    *oidc.Provider
 	ready       chan struct{}
-	started     chan error
-	cancel      context.CancelFunc
 
-	client *http.Client
-	logger *log.Logger
+	httpClient *http.Client
+
+	logger logger
 	debug  bool
 
-	iss       string
-	discovery *oidcDiscoveryDocument
-	jwks      *oidcJSONWebKeySet
+	definition *oidc.ProviderDefinition
 }
 
 // NewProvider creates a new Provider with the provider HTTP client. If no client
 // is provided, http.DefaultClient will be used.
-func NewProvider(client *http.Client, logger *log.Logger, debug bool) (*Provider, error) {
+func NewProvider(client *http.Client, logger logger, debug bool) (*Provider, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
 
 	p := &Provider{
-		client: client,
+		httpClient: client,
+
 		logger: logger,
 		debug:  debug,
 	}
@@ -63,32 +62,64 @@ func NewProvider(client *http.Client, logger *log.Logger, debug bool) (*Provider
 }
 
 // Initialize initializes the associated Provider with the provided issuer.
-func (p *Provider) Initialize(ctx context.Context, iss *url.URL) error {
+func (p *Provider) Initialize(ctx context.Context, issuer *url.URL) error {
 	var err error
-	if iss.Host == "" || iss.Scheme == "" {
+	if issuer.Host == "" || issuer.Scheme != "https" {
 		return ErrStatusInvalidIss
 	}
 
 	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	if p.initialized {
-		p.mutex.Unlock()
 		return ErrStatusAlreadyInitialized
 	}
 
-	c, cancel := context.WithCancel(ctx)
-	p.cancel = cancel
+	ready := make(chan struct{})
+	p.ready = ready
+
+	updates := make(chan *oidc.ProviderDefinition)
+	config := &oidc.ProviderConfig{
+		HTTPClient: p.httpClient,
+		Logger:     p.logger,
+	}
+	provider, err := oidc.NewProvider(issuer, config)
+	if err != nil {
+		if p.logger != nil {
+			p.logger.Printf("kcoidc initialize failed to created provider: %v", err)
+		}
+		return ErrStatusInvalidIss
+	}
+	err = provider.Initialize(ctx, updates, nil)
+	if err != nil {
+		if p.logger != nil {
+			p.logger.Printf("kcoidc initialize failed with error: %v", err)
+		}
+		return ErrStatusUnknown
+	}
+
 	p.initialized = true
+	p.provider = provider
 
-	p.iss = iss.String()
-
-	started := make(chan error, 1)
-	p.started = started
-	go p.start(c, started)
-
-	p.mutex.Unlock()
-
-	err = <-started
-	return err
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case update := <-updates:
+				if update == nil {
+					return
+				}
+				p.mutex.Lock()
+				d := p.definition
+				p.definition = update
+				p.mutex.Unlock()
+				if d == nil {
+					close(ready)
+				}
+			}
+		}
+	}()
+	return nil
 }
 
 // Uninitialize uninitializes the associated Provider.
@@ -100,21 +131,13 @@ func (p *Provider) Uninitialize() error {
 		return ErrStatusNotInitialized
 	}
 
-	p.cancel()
-	err := <-p.started
-
-	p.cancel = nil
-	p.started = nil
-	p.iss = ""
-	p.initialized = false
-	p.ready = nil
-	p.discovery = nil
-	p.jwks = nil
-
-	switch err {
-	case context.Canceled:
-		return nil
+	err := p.provider.Shutdown()
+	if p.logger != nil {
+		p.logger.Printf("kcoidc provider shutdown with error: %v", err)
 	}
+	p.initialized = false
+	p.provider = nil
+
 	return err
 }
 
@@ -139,86 +162,13 @@ func (p *Provider) WaitUntilReady(ctx context.Context, timeout time.Duration) er
 	return err
 }
 
-func (p *Provider) start(ctx context.Context, started chan error) {
-	if p.debug && p.logger != nil {
-		defer func() {
-			p.logger.Println("kcoidc start has ended")
-		}()
-	}
-
-	// Use started channel to signal caller that we are done.
-	p.mutex.Lock()
-	if !p.initialized || started != p.started {
-		p.mutex.Unlock()
-		started <- ErrStatusWrongInitialization
-		return
-	}
-
-	// Create ready channel to keep ourselves running until success or another
-	// signal makes us exit.
-	ready := make(chan struct{})
-	p.ready = ready
-	p.mutex.Unlock()
-	started <- nil
-
-	for {
-		retry := 60 * time.Second
-		if p.debug && p.logger != nil {
-			p.logger.Println("kcoidc running ...")
-		}
-
-		p.mutex.RLock()
-		if p.initialized && started == p.started {
-			iss := p.iss
-			p.mutex.RUnlock()
-			ddoc, err := newDiscoveryDocumentFromIssuer(ctx, p.client, iss)
-			if err != nil {
-				if p.logger != nil {
-					p.logger.Printf("kcoid discovery error: %v\n", err)
-				}
-				retry = 5 * time.Second
-			} else {
-				jwks, err := newoidcJSONWebKeySetFromURL(ctx, p.client, ddoc.JWKSUri)
-				if err != nil {
-					if p.logger != nil {
-						p.logger.Printf("kcoid discovery jwks error: %v\n", err)
-					}
-					retry = 5 * time.Second
-				} else {
-					p.mutex.Lock()
-					if p.initialized && started == p.started {
-						p.discovery = ddoc
-						p.jwks = jwks
-					}
-					close(ready)
-					p.mutex.Unlock()
-				}
-			}
-		} else {
-			p.mutex.RUnlock()
-		}
-
-		select {
-		case <-ctx.Done():
-			started <- ctx.Err()
-			close(started)
-			return
-		case <-ready:
-			close(started)
-			return
-		case <-time.After(retry):
-			// We break for retries.
-		}
-	}
-}
-
 // ValidateTokenString validates the provided token string value with the keys
 // of the accociated Provider and returns the authenticated users ID as found in
 // the claims, the standard claims and all extra claims.
 func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) (string, *jwt.StandardClaims, *ExtraClaimsWithType, error) {
 	p.mutex.RLock()
-	ddoc := p.discovery
-	jwks := p.jwks
+	ddoc := p.definition.WellKnown
+	jwks := p.definition.JWKS
 	p.mutex.RUnlock()
 	if ddoc == nil || jwks == nil {
 		return "", nil, nil, ErrStatusNotInitialized
@@ -231,7 +181,7 @@ func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) 
 		}
 
 		supportedAlg := false
-		for _, alg := range ddoc.SupportedSigningAlgValues {
+		for _, alg := range ddoc.IDTokenSigningAlgValuesSupported {
 			if token.Method.Alg() == alg {
 				supportedAlg = true
 				break
@@ -296,11 +246,13 @@ func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) 
 // FetchUserinfoWithAccesstokenString fetches the the userinfo result of the
 // accociated provider for the provided access token string.
 func (p *Provider) FetchUserinfoWithAccesstokenString(ctx context.Context, tokenString string) (map[string]interface{}, error) {
+
+	var contentTypeJSONOnly = []string{"application/json"}
 	userinfo := make(map[string]interface{})
 
 	headers := http.Header{
 		"Authorization": []string{fmt.Sprintf("Bearer %s", tokenString)},
 	}
 
-	return userinfo, fetchJSON(ctx, p.client, p.discovery.UserinfoEndpoint, headers, contentTypeJSONOnly, &userinfo)
+	return userinfo, fetchJSON(ctx, p.httpClient, p.definition.WellKnown.UserInfoEndpoint, headers, contentTypeJSONOnly, &userinfo)
 }
