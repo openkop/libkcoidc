@@ -21,12 +21,6 @@ type logger interface {
 	Printf(string, ...interface{})
 }
 
-type noopLogger struct {
-}
-
-func (log *noopLogger) Printf(string, ...interface{}) {
-}
-
 // DefaultLogger is the logger used by this library if no other is explicitly
 // specified.
-var DefaultLogger logger = &noopLogger{}
+var DefaultLogger logger = nil

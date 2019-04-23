@@ -43,7 +43,7 @@ var (
 	client                   *http.Client
 	initializedContext       context.Context
 	initializedContextCancel context.CancelFunc
-	logger                   *log.Logger
+	initializedLogger        *log.Logger
 	debug                    bool
 	provider                 *kcoidc.Provider
 )
@@ -52,13 +52,12 @@ func init() {
 	if os.Getenv("KCOIDC_DEBUG") != "" {
 		debug = true
 		fmt.Println("kcoidc-c debug enabled")
+		initializedLogger = log.New(os.Stdout, "", 0)
 	}
 
 	client = &http.Client{
 		Timeout: 60 * time.Second,
 	}
-
-	logger = log.New(os.Stdout, "", 0)
 
 	// Setup transport defaults.
 	InsecureSkipVerify(false)
@@ -81,7 +80,12 @@ func Initialize(ctx context.Context, iss string) error {
 		return kcoidc.ErrStatusInvalidIss
 	}
 
-	p, err := kcoidc.NewProvider(client, logger, debug)
+	var p *kcoidc.Provider
+	if initializedLogger == nil {
+		p, err = kcoidc.NewProvider(client, nil, debug)
+	} else {
+		p, err = kcoidc.NewProvider(client, initializedLogger, debug)
+	}
 	if err != nil {
 		if debug {
 			fmt.Printf("kcoidc-c initialize failed: %v\n", err)
@@ -212,7 +216,7 @@ func ValidateTokenString(tokenString string) (string, *jwt.StandardClaims, *kcoi
 
 	authenticatedUserID, standardClaims, extraClaims, err := p.ValidateTokenString(ctx, tokenString)
 	if err != nil && debug {
-		fmt.Printf("kcoid-c validate token resulted in validation failure: %s\n", err)
+		fmt.Printf("kcoidc-c validate token resulted in validation failure: %s\n", err)
 	}
 	return authenticatedUserID, standardClaims, extraClaims, err
 }
@@ -250,7 +254,7 @@ func FetchUserinfoWithAccesstokenString(tokenString string) (map[string]interfac
 
 	userinfo, err := p.FetchUserinfoWithAccesstokenString(ctx, tokenString)
 	if err != nil && debug {
-		fmt.Printf("kcoid-c fetch userinfo failure: %s\n", err)
+		fmt.Printf("kcoidc-c fetch userinfo failure: %s\n", err)
 	}
 	return userinfo, err
 }

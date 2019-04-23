@@ -52,6 +52,10 @@ func NewProvider(client *http.Client, logger logger, debug bool) (*Provider, err
 		client = http.DefaultClient
 	}
 
+	if logger == nil {
+		logger = DefaultLogger
+	}
+
 	p := &Provider{
 		httpClient: client,
 
