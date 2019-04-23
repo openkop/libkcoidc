@@ -52,7 +52,7 @@ func init() {
 	if os.Getenv("KCOIDC_DEBUG") != "" {
 		debug = true
 		fmt.Println("kcoidc-c debug enabled")
-		initializedLogger = log.New(os.Stdout, "", 0)
+		initializedLogger = log.New(os.Stdout, "kcoidc-c debug ", 0)
 	}
 
 	client = &http.Client{
