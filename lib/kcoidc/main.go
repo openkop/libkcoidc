@@ -55,8 +55,21 @@ func init() {
 		initializedLogger = log.New(os.Stdout, "kcoidc-c debug ", 0)
 	}
 
+	// TODO(longsleep): Add HTTP client env vars same as kcc-go/http.go.
 	client = &http.Client{
 		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
 	}
 
 	// Setup transport defaults.
@@ -148,17 +161,7 @@ func InsecureSkipVerify(insecureSkipVerify bool) error {
 		return kcoidc.ErrStatusAlreadyInitialized
 	}
 
-	transport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+	transport := client.Transport.(*http.Transport)
 	if insecureSkipVerify {
 		// Only set this when we have something to change to allow Go to use
 		// the internal HTTP2 connection logic otherwise.
@@ -168,9 +171,11 @@ func InsecureSkipVerify(insecureSkipVerify bool) error {
 		if debug {
 			fmt.Println("kcoidc-c TLS verification is now disabled - this is insecure")
 		}
+	} else {
+		// Use default TLS client config.
+		transport.TLSClientConfig = nil
 	}
 
-	client.Transport = transport
 	return nil
 }
 
