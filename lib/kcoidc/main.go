@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/net/http2"
 
 	"stash.kopano.io/kc/libkcoidc"
 )
@@ -41,6 +42,7 @@ import (
 var (
 	mutex                    sync.RWMutex
 	client                   *http.Client
+	transport                *http.Transport
 	initializedContext       context.Context
 	initializedContextCancel context.CancelFunc
 	initializedLogger        *log.Logger
@@ -56,20 +58,34 @@ func init() {
 	}
 
 	// TODO(longsleep): Add HTTP client env vars same as kcc-go/http.go.
-	client = &http.Client{
-		Timeout: 60 * time.Second,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-				DualStack: true,
-			}).DialContext,
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
+
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}
+
+	transport = &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			ClientSessionCache: tls.NewLRUClientSessionCache(0),
 		},
+	}
+
+	// Enable HTTP2 support.
+	err := http2.ConfigureTransport(transport)
+	if err != nil {
+		panic(err)
+	}
+
+	client = &http.Client{
+		Timeout:   60 * time.Second,
+		Transport: transport,
 	}
 
 	// Setup transport defaults.
@@ -161,19 +177,18 @@ func InsecureSkipVerify(insecureSkipVerify bool) error {
 		return kcoidc.ErrStatusAlreadyInitialized
 	}
 
-	transport := client.Transport.(*http.Transport)
-	if insecureSkipVerify {
-		// Only set this when we have something to change to allow Go to use
-		// the internal HTTP2 connection logic otherwise.
-		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+	if insecureSkipVerify != transport.TLSClientConfig.InsecureSkipVerify {
+		if insecureSkipVerify {
+			transport.TLSClientConfig.InsecureSkipVerify = true
+			if debug {
+				fmt.Println("kcoidc-c TLS verification is now disabled - this is insecure")
+			}
+		} else {
+			transport.TLSClientConfig.InsecureSkipVerify = false
+			if debug {
+				fmt.Println("kcoidc-c TLS verification is now enabled")
+			}
 		}
-		if debug {
-			fmt.Println("kcoidc-c TLS verification is now disabled - this is insecure")
-		}
-	} else {
-		// Use default TLS client config.
-		transport.TLSClientConfig = nil
 	}
 
 	return nil
