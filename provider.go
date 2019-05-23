@@ -45,6 +45,8 @@ type Provider struct {
 	definition *oidc.ProviderDefinition
 }
 
+var emptyProviderDefintion = &oidc.ProviderDefinition{}
+
 // NewProvider creates a new Provider with the provider HTTP client. If no client
 // is provided, http.DefaultClient will be used.
 func NewProvider(client *http.Client, logger logger, debug bool) (*Provider, error) {
@@ -101,8 +103,9 @@ func (p *Provider) Initialize(ctx context.Context, issuer *url.URL) error {
 		return ErrStatusUnknown
 	}
 
-	p.initialized = true
 	p.provider = provider
+	p.definition = emptyProviderDefintion
+	p.initialized = true
 
 	go func() {
 		for {
@@ -117,7 +120,7 @@ func (p *Provider) Initialize(ctx context.Context, issuer *url.URL) error {
 				d := p.definition
 				p.definition = update
 				p.mutex.Unlock()
-				if d == nil {
+				if d == emptyProviderDefintion {
 					close(ready)
 				}
 			}
@@ -250,6 +253,12 @@ func (p *Provider) ValidateTokenString(ctx context.Context, tokenString string) 
 // FetchUserinfoWithAccesstokenString fetches the the userinfo result of the
 // accociated provider for the provided access token string.
 func (p *Provider) FetchUserinfoWithAccesstokenString(ctx context.Context, tokenString string) (map[string]interface{}, error) {
+	p.mutex.RLock()
+	ddoc := p.definition.WellKnown
+	p.mutex.RUnlock()
+	if ddoc == nil {
+		return nil, ErrStatusNotInitialized
+	}
 
 	var contentTypeJSONOnly = []string{"application/json"}
 	userinfo := make(map[string]interface{})
@@ -258,5 +267,5 @@ func (p *Provider) FetchUserinfoWithAccesstokenString(ctx context.Context, token
 		"Authorization": []string{fmt.Sprintf("Bearer %s", tokenString)},
 	}
 
-	return userinfo, fetchJSON(ctx, p.httpClient, p.definition.WellKnown.UserInfoEndpoint, headers, contentTypeJSONOnly, &userinfo)
+	return userinfo, fetchJSON(ctx, p.httpClient, ddoc.UserInfoEndpoint, headers, contentTypeJSONOnly, &userinfo)
 }
