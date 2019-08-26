@@ -8,7 +8,7 @@ pipeline {
 		 }
 	}
 	environment {
-		DEP_RELEASE_TAG = 'v0.5.1'
+		DEP_RELEASE_TAG = 'v0.5.4'
 		GOBIN = '/usr/local/bin'
 		DEBIAN_FRONTEND = 'noninteractive'
 	}
