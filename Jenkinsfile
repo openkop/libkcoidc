@@ -2,24 +2,14 @@
 
 pipeline {
 	agent {
-		docker {
-			image 'golang:1.12-stretch' // Ensure to use old glibc, to be compatible to Debian 9
-			args '-u 0'
-		 }
-	}
-	environment {
-		DEP_RELEASE_TAG = 'v0.5.4'
-		GOBIN = '/usr/local/bin'
-		DEBIAN_FRONTEND = 'noninteractive'
+		dockerfile {
+			filename 'Dockerfile.build'
+		}
 	}
 	stages {
 		stage('Bootstrap') {
 			steps {
 				echo 'Bootstrapping..'
-				sh 'curl -sSL -o $GOBIN/dep https://github.com/golang/dep/releases/download/$DEP_RELEASE_TAG/dep-linux-amd64 && chmod 755 $GOBIN/dep'
-				sh 'go get -v golang.org/x/lint/golint'
-				sh 'go get -v github.com/tebeka/go2xunit'
-				sh 'apt-get update && apt-get install -y build-essential autoconf'
 				sh 'go version'
 			}
 		}
@@ -30,23 +20,24 @@ pipeline {
 				sh './configure --prefix=/tmp'
 			}
 		}
+		stage('Lint') {
+			steps {
+				echo 'Linting..'
+				sh 'make lint-checkstyle'
+				checkstyle pattern: 'test/tests.lint.xml', canComputeNew: false, unstableTotalHigh: '100'
+			}
+		}
 		stage('Vendor') {
 			steps {
 				echo 'Fetching vendor dependencies..'
 				sh 'make vendor'
 			}
 		}
-		stage('Lint') {
-			steps {
-				echo 'Linting..'
-				sh 'make lint | tee golint.txt || true'
-				sh 'make vet | tee govet.txt || true'
-			}
-		}
 		stage('Build') {
 			steps {
 				echo 'Building..'
-				sh 'make'
+				sh 'make DATE=reproducible'
+				sh 'sha256sum ./.libs/*'
 				sh 'make examples'
 			}
 		}
@@ -54,6 +45,7 @@ pipeline {
 			steps {
 				echo 'Testing..'
 				sh 'make test-xml-short'
+				junit allowEmptyResults: true, testResults: 'test/tests.xml'
 			}
 		}
 		stage('Install') {
@@ -74,8 +66,6 @@ pipeline {
 	post {
 		always {
 			archiveArtifacts 'dist/*.tar.gz'
-			junit allowEmptyResults: true, testResults: 'test/*.xml'
-			warnings parserConfigurations: [[parserName: 'Go Lint', pattern: 'golint.txt'], [parserName: 'Go Vet', pattern: 'govet.txt']], unstableTotalAll: '0'
 			cleanWs()
 		}
 	}

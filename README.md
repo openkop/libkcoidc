@@ -10,16 +10,12 @@ Also this project can be used directly from Go as an importable module.
 
 ## Compiling
 
-Make sure you have Go 1.10 or later installed. This assumes your GOPATH is `~/go`
-and you have `~/go/bin` in your $PATH and you have [Dep](https://golang.github.io/dep/)
-installed as well.
+Make sure you have Go 1.13 or later installed. This project uses Go modules.
 
 As this is a C library, it is furthermore assumed that there is a working C
 compiler toolchain in your path which includes autoconf and make.
 
 ```
-mkdir -p ~/go/src/stash.kopano.io/kc/libkcoidc
-cd ~/go/src/stash.kopano.io/kc
 git clone <THIS-PROJECT> libkcoidc
 cd libkcoidc
 ./bootstrap.sh
