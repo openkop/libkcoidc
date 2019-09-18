@@ -7,6 +7,9 @@ go:
   - tip
   - master
 
+env:
+  - GO111MODULE=on
+
 go_import_path: stash.kopano.io/kc/libkcoidc
 
 matrix:
