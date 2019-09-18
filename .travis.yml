@@ -1,10 +1,9 @@
 language: go
 
 go:
-  - 1.9
-  - '1.10'
   - '1.11'
   - '1.12'
+  - '1.13'
   - tip
   - master
 
@@ -14,13 +13,6 @@ matrix:
   allow_failures:
     - go: tip master
   fast_finish: true
-
-before_install:
-  - DEP_RELEASE_TAG=v0.5.0
-  - mkdir -p $HOME/bin
-  - curl -sSL -o $HOME/bin/dep https://github.com/golang/dep/releases/download/$DEP_RELEASE_TAG/dep-linux-amd64 && chmod 755 $HOME/bin/dep
-  - export PATH="$HOME/bin:$PATH"
-  - dep version
 
 script:
   - ./bootstrap.sh
