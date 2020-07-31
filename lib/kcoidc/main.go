@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"stash.kopano.io/kc/libkcoidc"
+	"stash.kopano.io/kc/libkcoidc/internal/version"
 )
 
 // Global library state. This also means that this library can only use a single
@@ -78,6 +79,16 @@ func init() {
 
 	// Setup transport defaults.
 	InsecureSkipVerify(false)
+}
+
+// Version returns the runtime version string of this module.
+func Version() string {
+	return version.Version
+}
+
+// BuildDate returns the build data string of this module.
+func BuildDate() string {
+	return version.BuildDate
 }
 
 // Initialize initializes the global library state with the provided issuer.

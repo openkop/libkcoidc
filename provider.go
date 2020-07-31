@@ -15,6 +15,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"stash.kopano.io/kgol/oidc-go"
+
+	"stash.kopano.io/kc/libkcoidc/internal/version"
 )
 
 // A Provider is a representation of an OpenID Connect Provider (OP).
@@ -53,6 +55,16 @@ func NewProvider(client *http.Client, logger logger, debug bool) (*Provider, err
 		debug:  debug,
 	}
 	return p, nil
+}
+
+// Version returns the runtime version string of this module.
+func (p *Provider) Version() string {
+	return version.Version
+}
+
+// BuildDate returns the build data string of this module.
+func (p *Provider) BuildDate() string {
+	return version.BuildDate
 }
 
 // Initialize initializes the associated Provider with the provided issuer.

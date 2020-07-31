@@ -26,6 +26,16 @@ import (
 	"stash.kopano.io/kc/libkcoidc"
 )
 
+//export kcoidc_version
+func kcoidc_version() *C.char {
+	return C.CString(Version())
+}
+
+//export kcoidc_build_date
+func kcoidc_build_date() *C.char {
+	return C.CString(BuildDate())
+}
+
 //export kcoidc_initialize
 func kcoidc_initialize(issCString *C.char) C.ulonglong {
 	err := Initialize(context.Background(), C.GoString(issCString))
