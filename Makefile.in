@@ -199,6 +199,7 @@ dist: licenses ; $(info building dist tarball ...)
 	cp -avf ../LICENSE.txt "${PACKAGE_NAME}-${VERSION}" && \
 	cp -avf ../3rdparty-LICENSES.md "${PACKAGE_NAME}-${VERSION}" && \
 	cp -avf ../README.md "${PACKAGE_NAME}-${VERSION}" && \
+	cp -avf ../libkcoidc.pc "${PACKAGE_NAME}-${VERSION}" && \
 	cp -avf ../.libs/* "${PACKAGE_NAME}-${VERSION}" && \
 	chmod 755 "${PACKAGE_NAME}-${VERSION}"/*.so* && \
 	rm -f "${PACKAGE_NAME}-${VERSION}"/$(SHAREDLIB) && \
@@ -208,9 +209,10 @@ dist: licenses ; $(info building dist tarball ...)
 
 # Install
 .PHONY: install
-install: lib ; $(info installing ...)
+install: lib libkcoidc.pc ; $(info installing ...)
 	@mkdir -p $(DESTDIR)$(libdir)
 	@mkdir -p $(DESTDIR)$(includedir)
+	cp -af libkcoidc.pc $(DESTDIR)$(libdir)/pkgconfig
 	cp -f $(CLIBS) $(DESTDIR)$(libdir)
 	chmod 755 $(DESTDIR)$(libdir)/$(SHAREDLIBV)
 	rm -f $(DESTDIR)$(libdir)/$(SHAREDLIB)
@@ -220,6 +222,7 @@ install: lib ; $(info installing ...)
 
 .PHONY: uninstall
 uninstall: ; $(info uninstalling ...)
+	rm -f  $(DESTDIR)$(libdir)/pkgconfig/libkcoidc.pc
 	rm -f $(DESTDIR)$(libdir)/$(notdir $(CLIBS))
 	rm -f $(DESTDIR)$(libdir)/$(SHAREDLIB)
 	rm -f $(DESTDIR)$(includedir)/$(notdir $(CDEPS))
@@ -232,6 +235,7 @@ clean: ; $(info cleaning ...)	@
 	@rm -rf .libs
 	@rm -rf bin
 	@rm -rf test/test.*
+	@rm -f libkcoidc.pc
 	(cd python && $(PYTHON) setup.py clean)
 
 .PHONY: version

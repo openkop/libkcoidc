@@ -3,6 +3,8 @@ AC_INIT([libkcoidc], [1.0.0], [development@kopano.io])
 
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_CONFIG_FILES([libkcoidc.pc])
+
 AC_PROG_CC
 if ! which "${CC}" >/dev/null ; then
     AC_MSG_ERROR([Please install a C compiler before trying to build libkcoidc])

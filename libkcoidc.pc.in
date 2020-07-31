@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Kopano-libkcoidc
+Description: Kopano OpenID Connection validation library
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lkcoidc
+Cflags: -I${includedir}
