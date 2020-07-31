@@ -57,6 +57,10 @@ TIMEOUT  = 30
 
 # Build
 
+LDFLAGS  ?=
+ASMFLAGS ?=
+GCFLAGS  ?=
+
 .PHONY: default
 default: lib
 
@@ -85,7 +89,9 @@ $(LIBS): vendor | $(DST_BIN) $(DST_LIBS); $(info building C libs $@ ...) @
 		-tags release \
 		-trimpath \
 		-buildmode=c-shared \
-		-ldflags '-s -w -buildid=reproducible/$(VERSION) -X $(PACKAGE)/internal/version.Version=$(VERSION) -X $(PACKAGE)/internal/version.BuildDate=$(DATE) -linkmode external -extldflags=-Wl,-soname,lib$(notdir $@).so.0' \
+		-asmflags '$(ASMFLAGS)' \
+		-gcflags '$(GCFLAGS)' \
+		-ldflags '$(LDFLAGS) -buildid=reproducible/$(VERSION) -X $(PACKAGE)/internal/version.Version=$(VERSION) -X $(PACKAGE)/internal/version.BuildDate=$(DATE) -linkmode external -extldflags=-Wl,-soname,lib$(notdir $@).so.0' \
 		-o $(DST_LIBS)/$(notdir $@).so ./$@
 	@mv -f $(DST_LIBS)/$(notdir $@).so $(DST_LIBS)/lib$(notdir $@).so.$(CAPIVER)
 	cd $(DST_LIBS) && ln -sfn lib$(notdir $@).so.$(CAPIVER) lib$(notdir $@).so
@@ -96,6 +102,10 @@ $(CLIBS): $(CDEPS)
 
 .PHONY: lib
 lib: fmt vendor | $(CLIBS)
+
+.PHONY: lib-stripped
+lib-stripped: LDFLAGS= -s -w
+lib-stripped: lib
 
 .PHONY: python
 python: $(CDEPS)
