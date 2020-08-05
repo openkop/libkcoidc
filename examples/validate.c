@@ -3,7 +3,7 @@
  * Copyright 2018 Kopano and its licensors
  */
 
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
