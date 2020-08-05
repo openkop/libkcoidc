@@ -1,5 +1,5 @@
 AC_PREREQ(2.60)
-AC_INIT([libkcoidc], [1.0.0], [development@kopano.io])
+AC_INIT([libkcoidc], m4_esyscmd([scripts/git-version-gen .version]), [development@kopano.io])
 
 AC_CONFIG_MACRO_DIR([m4])
 

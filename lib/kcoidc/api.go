@@ -7,7 +7,7 @@ package main //nolint
 
 /*
 #define KCOIDC_API 1
-#define KCOIDC_API_MINOR 1
+#define KCOIDC_API_MINOR 2
 
 #define KCOIDC_VERSION (KCOIDC_API * 10000 + KCOIDC_API_MINOR * 100)
 
