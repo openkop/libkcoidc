@@ -10,7 +10,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -29,21 +28,22 @@ import (
 // OIDC Provider at the same time as the issuer is directly bound to the global
 // library state.
 var (
+	debug bool
+
 	mutex                    sync.RWMutex
 	client                   *http.Client
 	transport                *http.Transport
 	initializedContext       context.Context
 	initializedContextCancel context.CancelFunc
-	initializedLogger        *log.Logger
-	debug                    bool
-	provider                 *kcoidc.Provider
+
+	initializedLogger kcoidc.Logger
+	provider          *kcoidc.Provider
 )
 
 func init() {
 	if os.Getenv("KCOIDC_DEBUG") != "" {
 		debug = true
-		fmt.Println("kcoidc-c debug enabled")
-		initializedLogger = log.New(os.Stdout, "kcoidc-c debug ", 0)
+		initializedLogger = getDefaultDebugLogger()
 	}
 
 	// TODO(longsleep): Add HTTP client env vars same as kcc-go/http.go.
@@ -89,6 +89,22 @@ func Version() string {
 // BuildDate returns the build data string of this module.
 func BuildDate() string {
 	return version.BuildDate
+}
+
+// SetLogger sets the logger to be used by this library and if to use debug
+// logging. It must be called before the call to initialize.
+func SetLogger(logger kcoidc.Logger, debugFlag *bool) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if provider != nil {
+		return kcoidc.ErrStatusAlreadyInitialized
+	}
+	initializedLogger = logger
+	if debugFlag != nil {
+		debug = *debugFlag
+	}
+	return nil
 }
 
 // Initialize initializes the global library state with the provided issuer.

@@ -5,10 +5,12 @@
 
 package kcoidc
 
-type logger interface {
+// A Logger defines a simple logging interface for pluggable loggers used by
+// this module.
+type Logger interface {
 	Printf(string, ...interface{})
 }
 
 // DefaultLogger is the logger used by this library if no other is explicitly
 // specified.
-var DefaultLogger logger = nil
+var DefaultLogger Logger = nil

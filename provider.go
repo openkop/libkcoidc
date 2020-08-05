@@ -29,7 +29,7 @@ type Provider struct {
 
 	httpClient *http.Client
 
-	logger logger
+	logger Logger
 	debug  bool
 
 	definition *oidc.ProviderDefinition
@@ -39,7 +39,7 @@ var emptyProviderDefintion = &oidc.ProviderDefinition{}
 
 // NewProvider creates a new Provider with the provider HTTP client. If no client
 // is provided, http.DefaultClient will be used.
-func NewProvider(client *http.Client, logger logger, debug bool) (*Provider, error) {
+func NewProvider(client *http.Client, logger Logger, debug bool) (*Provider, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}

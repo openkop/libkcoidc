@@ -3,7 +3,7 @@
  * Copyright 2018 Kopano and its licensors
  */
 
-package main
+package main //nolint
 
 /*
 #define KCOIDC_API 1
@@ -11,19 +11,21 @@ package main
 
 #define KCOIDC_VERSION (KCOIDC_API * 10000 + KCOIDC_API_MINOR * 100)
 
+#include "kcoidc_callbacks.h"
+
 // Token types as defined by kcoidc in claims.go, made usable from C.
 #define KCOIDC_TOKEN_TYPE_STANDARD 0
 #define KCOIDC_TOKEN_TYPE_KCACCESS 1
 #define KCOIDC_TOKEN_TYPE_KCRERESH 2
 */
-import "C"
+import "C" //nolint
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"stash.kopano.io/kc/libkcoidc"
+	"stash.kopano.io/kc/libkcoidc" //nolint:goimports // False positive.
 )
 
 //export kcoidc_version
@@ -34,6 +36,25 @@ func kcoidc_version() *C.char {
 //export kcoidc_build_date
 func kcoidc_build_date() *C.char {
 	return C.CString(BuildDate())
+}
+
+//export kcoidc_set_logger
+func kcoidc_set_logger(cb C.kcoidc_cb_func_log_s, debug C.int) C.ulonglong {
+	logger := getCLogger(cb)
+	var flag *bool
+	if debug >= 0 {
+		var f bool
+		if debug != 0 {
+			f = true
+		}
+		flag = &f
+	}
+	err := SetLogger(logger, flag)
+	if err != nil {
+		return asKnownErrorOrUnknown(err)
+	}
+
+	return kcoidc.StatusSuccess
 }
 
 //export kcoidc_initialize
