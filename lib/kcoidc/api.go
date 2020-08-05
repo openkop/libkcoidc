@@ -12,9 +12,9 @@ package main
 #define KCOIDC_VERSION (KCOIDC_API * 10000 + KCOIDC_API_MINOR * 100)
 
 // Token types as defined by kcoidc in claims.go, made usable from C.
-static int const KCOIDC_TOKEN_TYPE_STANDARD = 0;
-static int const KCOIDC_TOKEN_TYPE_KCACCESS = 1;
-static int const KCOIDC_TOKEN_TYPE_KCRERESH = 2;
+#define KCOIDC_TOKEN_TYPE_STANDARD 0
+#define KCOIDC_TOKEN_TYPE_KCACCESS 1
+#define KCOIDC_TOKEN_TYPE_KCRERESH 2
 */
 import "C"
 
