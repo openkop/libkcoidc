@@ -19,7 +19,7 @@ func (errStatus ErrStatus) Error() string {
 // ErrStatusors as defined by this library.
 const (
 	ErrStatusNone              = iota
-	ErrStatusUnknown ErrStatus = (1 << 8) | iota
+	ErrStatusUnknown ErrStatus = iota + (1 << 8)
 	ErrStatusInvalidIss
 	ErrStatusAlreadyInitialized
 	ErrStatusNotInitialized
