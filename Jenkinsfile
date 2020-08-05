@@ -63,7 +63,7 @@ pipeline {
 	}
 	post {
 		always {
-			junit allowEmptyResults: true, testResults: 'test/tests.xml'
+			junit allowEmptyResults: false, testResults: 'test/tests.xml'
 
 			recordIssues enabledForFailure: true, qualityGates: [[threshold: 100, type: 'TOTAL', unstable: true]], tools: [checkStyle(pattern: 'test/tests.lint.xml')]
 
