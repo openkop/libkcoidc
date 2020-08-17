@@ -19,7 +19,7 @@ static PyObject *PyKCOIDCError;
 static PyObject *
 pykcoidc_initialize(PyObject *self, PyObject *args)
 {
-	const char *iss_s;
+	char *iss_s;
 	int res;
 
 	if (!PyArg_ParseTuple(args, "s", &iss_s))
@@ -83,7 +83,7 @@ static PyObject *
 pykcoidc_validate_token_s(PyObject *self, PyObject *args)
 {
 	PyObject *res = NULL;
-	const char *token_s;
+	char *token_s;
 	struct kcoidc_validate_token_s_return token_result;
 
 	if (!PyArg_ParseTuple(args, "s", &token_s))
@@ -112,8 +112,8 @@ static PyObject *
 pykcoidc_validate_token_and_require_scope_s(PyObject *self, PyObject *args)
 {
 	PyObject *res = NULL;
-	const char *token_s;
-	const char *required_scope_s;
+	char *token_s;
+	char *required_scope_s;
 	struct kcoidc_validate_token_and_require_scope_s_return token_result;
 
 	if (!PyArg_ParseTuple(args, "ss", &token_s, &required_scope_s))
@@ -142,7 +142,7 @@ static PyObject *
 pykcoidc_fetch_userinfo_with_accesstoken_s(PyObject *self, PyObject *args)
 {
 	PyObject *res = NULL;
-	const char *token_s;
+	char *token_s;
 	struct kcoidc_fetch_userinfo_with_accesstoken_s_return userinfo_result;
 
 	if (!PyArg_ParseTuple(args, "s", &token_s))
