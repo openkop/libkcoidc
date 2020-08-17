@@ -221,7 +221,7 @@ dist: licenses ; $(info building dist tarball ...)
 # Install
 .PHONY: install
 install: lib libkcoidc.pc ; $(info installing ...)
-	@mkdir -p $(DESTDIR)$(libdir)
+	@mkdir -p $(DESTDIR)$(libdir)/pkgconfig
 	@mkdir -p $(DESTDIR)$(includedir)
 	cp -af libkcoidc.pc $(DESTDIR)$(libdir)/pkgconfig
 	cp -f $(CLIBS) $(DESTDIR)$(libdir)
