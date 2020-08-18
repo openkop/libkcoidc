@@ -222,7 +222,7 @@ dist: licenses ; $(info building dist tarball ...)
 	tar --owner=0 --group=0 -czvf ${PACKAGE_NAME}-${VERSION}.tar.gz "${PACKAGE_NAME}-${VERSION}" && \
 	cd ..
 
-.PHONE: changelog
+.PHONY: changelog
 changelog: ; $(info updating changelog ...)
 	$(CHGLOG) --output CHANGELOG.md $(ARGS)
 
