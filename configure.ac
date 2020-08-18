@@ -28,4 +28,6 @@ AC_PATH_PROG([GO2XUNIT],[go2xunit])
 
 AC_PATH_PROGS([PYTHON],[python3 python python2],[python])
 
+AC_PATH_PROG([GITCHGLOG],[git-chglog],[git-chglog])
+
 AC_OUTPUT(Makefile)

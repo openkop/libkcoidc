@@ -25,6 +25,8 @@ CFLAGS   ?= -I$(DST_HDRS)
 
 PYTHON ?= @PYTHON@
 
+CHGLOG ?= @GITCHGLOG@
+
 # Cgo
 
 CGO_ENABLED ?= 0
@@ -43,6 +45,7 @@ SHAREDLIBV=libkcoidc.so.0
 export CGO_ENABLED GO111MODULE
 unexport GOPATH
 
+ARGS    ?=
 PWD     := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2>/dev/null | sed 's/^v//' || \
@@ -219,7 +222,12 @@ dist: licenses ; $(info building dist tarball ...)
 	tar --owner=0 --group=0 -czvf ${PACKAGE_NAME}-${VERSION}.tar.gz "${PACKAGE_NAME}-${VERSION}" && \
 	cd ..
 
+.PHONE: changelog
+changelog: ; $(info updating changelog ...)
+	$(CHGLOG) --output CHANGELOG.md $(ARGS)
+
 # Install
+
 .PHONY: install
 install: lib libkcoidc.pc ; $(info installing ...)
 	@mkdir -p $(DESTDIR)$(libdir)/pkgconfig
