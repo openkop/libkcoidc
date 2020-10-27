@@ -2,7 +2,7 @@
 # Copyright 2018 Kopano and its licensors
 
 # Ensure to use old glibc, to be compatible with older distros
-FROM golang:1.14.4-stretch
+FROM golang:1.14.10-stretch
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
