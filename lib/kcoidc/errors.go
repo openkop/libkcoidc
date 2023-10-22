@@ -9,7 +9,7 @@ import (
 	"C"
 	"fmt"
 
-	"stash.kopano.io/kc/libkcoidc"
+	"github.com/openkop/libkcoidc"
 )
 
 func asKnownErrorOrUnknown(err error) C.ulonglong {

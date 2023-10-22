@@ -15,7 +15,7 @@ import (
 	"os"
 	"time"
 
-	"stash.kopano.io/kc/libkcoidc"
+	"github.com/openkop/libkcoidc"
 )
 
 func run(issString, tokenString string) error {

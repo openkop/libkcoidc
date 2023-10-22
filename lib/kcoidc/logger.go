@@ -17,7 +17,7 @@ import (
 	"os"
 	"strings"
 
-	"stash.kopano.io/kc/libkcoidc"
+	"github.com/openkop/libkcoidc"
 )
 
 type callbackLogger struct {

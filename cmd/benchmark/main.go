@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"stash.kopano.io/kc/libkcoidc"
+	"github.com/openkop/libkcoidc"
 )
 
 func benchValidateTokenS(ctx context.Context, provider *kcoidc.Provider, id int, count uint64, tokenString string) {

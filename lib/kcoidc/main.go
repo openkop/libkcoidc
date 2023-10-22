@@ -20,8 +20,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/http2"
 
-	"stash.kopano.io/kc/libkcoidc"
-	"stash.kopano.io/kc/libkcoidc/internal/version"
+	"github.com/openkop/libkcoidc"
+	"github.com/openkop/libkcoidc/internal/version"
 )
 
 // Global library state. This also means that this library can only use a single

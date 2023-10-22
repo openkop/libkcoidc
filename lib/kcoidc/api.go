@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"stash.kopano.io/kc/libkcoidc" //nolint:goimports // False positive.
+	"github.com/openkop/libkcoidc" //nolint:goimports // False positive.
 )
 
 //export kcoidc_version

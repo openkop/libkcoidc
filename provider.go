@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/openkop/oidc-go"
 
-	"stash.kopano.io/kc/libkcoidc/internal/version"
+	"github.com/openkop/libkcoidc/internal/version"
 )
 
 // A Provider is a representation of an OpenID Connect Provider (OP).

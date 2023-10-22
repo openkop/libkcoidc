@@ -1,4 +1,4 @@
-PACKAGE  = stash.kopano.io/kc/libkcoidc
+PACKAGE  = github.com/openkop/libkcoidc
 PACKAGE_NAME = $(shell basename $(PACKAGE))
 
 # Autoconf

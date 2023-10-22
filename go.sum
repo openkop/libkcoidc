@@ -4,6 +4,10 @@ github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f h1:U5y3Y5UE0w7amNe
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/openkop/oidc-go v0.3.2 h1:iu9eMfmPhdFNRk25LhK+5BIbZhl8Ws9bodgE/tV/s2s=
+github.com/openkop/oidc-go v0.3.2/go.mod h1:roVKz8FVmPcdL4pUu+Gzk+GH2kOhz1UvnuMNTkjHyH8=
+github.com/openkop/oidc-go v0.3.3-0.20231021150512-5da8e2dfa038 h1:MPmZk1WUnFvUylY2c2LA4Xi61HL/zRs8JjHTUVyXMCQ=
+github.com/openkop/oidc-go v0.3.3-0.20231021150512-5da8e2dfa038/go.mod h1:JNqbU/mDDt6NN8mum1fMmkx5zE/l2ET702YhJENKB94=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 h1:J9b7z+QKAmPf4YLrFg6oQUotqHQeUNWwkvo7jZp1GLU=
@@ -29,5 +33,3 @@ gopkg.in/square/go-jose.v2 v2.4.0 h1:0kXPskUMGAXXWJlP05ktEMOV0vmzFQUWw6d+aZJQU8A
 gopkg.in/square/go-jose.v2 v2.4.0/go.mod h1:M9dMgbHiYLoDGQrXy7OpJDJWiKiU//h+vD76mk0e1AI=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-stash.kopano.io/kgol/oidc-go v0.3.2 h1:ziXyzFXmlZ0xEaquPWqS3PM0OzfttOp84G72hyvWRGQ=
-stash.kopano.io/kgol/oidc-go v0.3.2/go.mod h1:roVKz8FVmPcdL4pUu+Gzk+GH2kOhz1UvnuMNTkjHyH8=

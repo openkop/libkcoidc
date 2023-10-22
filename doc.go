@@ -3,4 +3,4 @@
  * Copyright 2019 Kopano and its licensors
  */
 
-package kcoidc // import "stash.kopano.io/kc/libkcoidc"
+package kcoidc // import "github.com/openkop/libkcoidc"
