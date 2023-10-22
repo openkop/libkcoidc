@@ -238,6 +238,7 @@ install: lib libkcoidc.pc ; $(info installing ...)
 	rm -f $(DESTDIR)$(libdir)/$(SHAREDLIB)
 	ln -s $(SHAREDLIBV) $(DESTDIR)$(libdir)/$(SHAREDLIB)
 	cp -f $(CHDRS) $(DESTDIR)$(includedir)
+	cp -f $(DST_HDRS)/kcoidc.h $(DESTDIR)$(includedir)
 	(ldconfig || true) >/dev/null 2>&1
 
 .PHONY: uninstall
